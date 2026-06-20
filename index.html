@@ -464,22 +464,20 @@
 <!-- END OF BLOCK 5 -->
 <!-- START OF BLOCK 6: GOOGLE AI GEMINI REST CORE PIPELINE & SYSTEM PROMPT AUDITOR -->
 <script>
-    // Asynchronous network bridge pipeline connecting directly to the Google Cloud Vertex AI European infrastructure
+    // Asynchronous network bridge pipeline connecting directly to the Google Gemini Enterprise REST gateway
     async function executeLqaAIEvaluator(questionIndex) {
         var apiKeyField = document.getElementById('geminiApiKey');
         var candidateValue = document.getElementById('cand_q' + questionIndex).value.trim();
         var reportBox = document.getElementById('report_q' + questionIndex);
         
-        // Fetch centralized language parameters from the global configuration menu dropdown node
         var globalLangMenu = document.getElementById('globalCandidateLanguage');
         var selectedLangCode = globalLangMenu ? globalLangMenu.value : "en-US";
         var selectedLangName = globalLangMenu ? globalLangMenu.options[globalLangMenu.selectedIndex].text : "Unknown Language";
 
         if (!reportBox) return;
 
-        // Verify hardware parameters presence before issuing the external network payload query
         if (!apiKeyField || !apiKeyField.value.trim()) {
-            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Vertex AI API Key field is empty. Please enter your authorized key at the top of the dashboard.</span>';
+            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Gemini API Key field is empty. Please enter your secret key at the top of the dashboard.</span>';
             return;
         }
         if (!candidateValue) {
@@ -489,10 +487,8 @@
 
         var secretApiKey = apiKeyField.value.trim();
         
-        // Render immediate temporary administrative status loader feedback to the evaluator
-        reportBox.innerHTML = '<span class="ai-status-loader">🔄 Connecting to European Cloud Nodes (Vertex AI)... Analyzing text metrics for Question ' + questionIndex + '...</span>';
+        reportBox.innerHTML = '<span class="ai-status-loader">🔄 Connecting to Gemini Enterprise Platform... Analyzing text metrics for Question ' + questionIndex + '...</span>';
 
-        // Conditional Prompt Engineering Router distinguishing fixed English inputs from dynamically selected target languages
         var targetLqaLanguage = "English (Fixed Prompt Evaluation Framework)";
         var languageContextPromptInstruction = "";
 
@@ -504,7 +500,6 @@
             languageContextPromptInstruction = "The candidate is writing their essay in " + selectedLangName + " (" + selectedLangCode + "). Thoroughly audit their text for spelling mistakes, grammatical conformity, morphological slip-ups, and style issues native to that specific linguistic region.";
         }
 
-        // Strict criteria instruction prompt forcing English outputs regardless of input language matrices
         var systemInstructionPrompt = 'You are an authoritative Senior LQA Lead and Linguistic Auditor. ' +
             'Your task is to thoroughly analyze the provided candidate response text for Question ' + questionIndex + '. ' +
             languageContextPromptInstruction + ' ' +
@@ -513,7 +508,7 @@
             'Structure your English response cleanly with bullet points for readability. ' +
             'Here is the candidate text to audit:\n\n' + candidateValue;
 
-        // Unified professional European REST endpoint gateway for Gemini 1.5 Flash (Vertex AI Protocol)
+        // Enhanced Enterprise Endpoints Protocol compatible with European Gemini 3 API frameworks
         var restEndpointUrl = 'https://googleapis.com' + secretApiKey;
 
         var requestPayloadStructure = {
@@ -526,7 +521,6 @@
             ]
         };
 
-        // Execute browser-side network dispatch operation towards regional nodes
         fetch(restEndpointUrl, {
             method: 'POST',
             headers: {
@@ -541,7 +535,6 @@
             return networkResponse.json();
         })
         .then(function(parsedJsonData) {
-            // Extract text nodes safely out of the professional Vertex AI JSON structural tree response framework
             if (parsedJsonData && 
                 parsedJsonData.candidates && 
                 parsedJsonData.candidates[0] && 
@@ -551,7 +544,6 @@
                 
                 var generatedReportText = parsedJsonData.candidates[0].content.parts[0].text;
                 
-                // Format Markdown indicators layout parameters into pure browser HTML text elements cleanly
                 var cleanHtmlReport = generatedReportText
                     .replace(/\n/g, '<br>')
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -559,12 +551,12 @@
                     
                 reportBox.innerHTML = cleanHtmlReport;
             } else {
-                reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Received an unparseable JSON structural framework payload object from the European servers.</span>';
+                reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Received an unparseable JSON framework from Enterprise servers.</span>';
             }
         })
         .catch(function(networkException) {
-            console.error('Google Cloud infrastructure transaction failure exception handled gracefully:', networkException);
-            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">API Connection Failed: ' + escapeHtmlHtmlEntities(networkException.message) + '. Please check your API key validity, network connectivity, or project quotas.</span>';
+            console.error('Gemini Enterprise transaction failure exception handled gracefully:', networkException);
+            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">API Connection Failed: ' + escapeHtmlHtmlEntities(networkException.message) + '. Please check your API key validity or browser extension blocks.</span>';
         });
     }
 </script>
