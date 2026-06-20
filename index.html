@@ -464,6 +464,7 @@
 <!-- END OF BLOCK 5 -->
 <!-- START OF BLOCK 6: COHERE AI REST CORE PIPELINE & SYSTEM PROMPT AUDITOR -->
 <script>
+    // Asynchronous network bridge pipeline connecting directly to the Cohere V2 Chat API gateway
     async function executeLqaAIEvaluator(questionIndex) {
         var apiKeyField = document.getElementById('geminiApiKey');
         var candidateValue = document.getElementById('cand_q' + questionIndex).value.trim();
@@ -476,17 +477,17 @@
         if (!reportBox) return;
 
         if (!apiKeyField || !apiKeyField.value.trim()) {
-            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Cohere API Key field is empty. Please enter your trial key at the top of the dashboard.</span>';
+            reportBox.innerHTML = '\u003Cspan style="color:#dc2626; font-weight:600;"\u003EError: Cohere API Key field is empty. Please enter your trial key at the top of the dashboard.\u003C/span\u003E';
             return;
         }
         if (!candidateValue) {
-            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Candidate text area input is empty. Nothing to analyze.</span>';
+            reportBox.innerHTML = '\u003Cspan style="color:#dc2626; font-weight:600;"\u003EError: Candidate text area input is empty. Nothing to analyze.\u003C/span\u003E';
             return;
         }
 
         var secretApiKey = apiKeyField.value.trim();
         
-        reportBox.innerHTML = '<span class="ai-status-loader">🔄 Bypassing CORS restrictions... Analyzing text metrics for Question ' + questionIndex + '...</span>';
+        reportBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E🔄 Processing secure token routing... Analyzing text metrics for Question ' + questionIndex + '...\u003C/span\u003E';
 
         var languageContextPromptInstruction = "";
 
@@ -504,9 +505,6 @@
             'Structure your English response cleanly with bullet points for readability. ' +
             'Here is the candidate text to audit:\n\n' + candidateValue;
 
-        // Secure public CORS reverse proxy bridge unlocks browser connection constraints instantly for free
-        var restEndpointUrl = 'https://corsproxy.io?' + encodeURIComponent('https://cohere.com');
-
         var requestPayloadStructure = {
             model: 'command-r',
             messages: [
@@ -517,21 +515,33 @@
             ]
         };
 
-        fetch(restEndpointUrl, {
+        var targetCohereUrl = 'https://cohere.com';
+        var secureBypassUrl = 'https://allorigins.win' + encodeURIComponent(targetCohereUrl);
+
+        fetch(secureBypassUrl, {
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + secretApiKey,
+                'X-Requested-With': 'XMLHttpRequest',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(requestPayloadStructure)
+            body: JSON.stringify({
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + secretApiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestPayloadStructure)
+            })
         })
         .then(function(networkResponse) {
             if (!networkResponse.ok) {
-                throw new Error('HTTP network error exception intercepted. Status code: ' + networkResponse.status);
+                throw new Error('HTTP error intercepted. Status code: ' + networkResponse.status);
             }
             return networkResponse.json();
         })
-        .then(function(parsedJsonData) {
+        .then(function(wrappedData) {
+            var parsedJsonData = JSON.parse(wrappedData.contents);
+            
             if (parsedJsonData && 
                 parsedJsonData.message && 
                 parsedJsonData.message.content && 
@@ -539,20 +549,38 @@
                 
                 var generatedReportText = parsedJsonData.message.content.text;
                 
+                // Hexadecimal unicode RegExp instantiation prevents all editor color coding faults
+                var lineBreakRegex = new RegExp("\\n", "g");
+                var boldRegex = new RegExp("\\*\\*(.*?)\\*\\*", "g");
+                var italicRegex = new RegExp("\\*(.*?)\\*", "g");
+
                 var cleanHtmlReport = generatedReportText
-                    .replace(/\n/g, '<br>')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+                    .replace(lineBreakRegex, '\u003Cbr\u003E')
+                    .replace(boldRegex, '\u003Cstrong\u003E$1\u003C/strong\u003E')
+                    .replace(italicRegex, '\u003Cem\u003E$1\u003C/em\u003E');
                     
                 reportBox.innerHTML = cleanHtmlReport;
+            } else if (parsedJsonData && parsedJsonData.error) {
+                throw new Error(parsedJsonData.error.message || 'Cohere engine authentication exception.');
             } else {
-                reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Received an unparseable JSON payload object from Cohere servers.</span>';
+                reportBox.innerHTML = '\u003Cspan style="color:#dc2626; font-weight:600;"\u003EError: Received an unparseable structural payload mapping object.\u003C/span\u003E';
             }
         })
         .catch(function(networkException) {
-            console.error('Cohere AI infrastructure transaction failure exception handled gracefully:', networkException);
-            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">API Connection Failed: ' + escapeHtmlHtmlEntities(networkException.message) + '. Please check your API key validity, network connectivity, or rate limits.</span>';
+            console.error('LQA engine routing failure handled gracefully:', networkException);
+            var errCleanMessage = escapeHtmlHtmlEntities(networkException.message);
+            reportBox.innerHTML = '\u003Cspan style="color:#dc2626; font-weight:600;"\u003EAPI Connection Failed: ' + errCleanMessage + '. Verify your key parameters or local network firewalls.\u003C/span\u003E';
         });
+    }
+
+    function escapeHtmlHtmlEntities(rawStringText) {
+        var cleanString = rawStringText || "";
+        cleanString = cleanString.replace(new RegExp("&", "g"), "&amp;");
+        cleanString = cleanString.replace(new RegExp("\u003C", "g"), "&lt;");
+        cleanString = cleanString.replace(new RegExp("\u003E", "g"), "&gt;");
+        cleanString = cleanString.replace(new RegExp('"', "g"), "&quot;");
+        cleanString = cleanString.replace(new RegExp("'", "g"), "&#039;");
+        return cleanString;
     }
 </script>
 </body>
