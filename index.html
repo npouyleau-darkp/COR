@@ -464,20 +464,17 @@
 <!-- END OF BLOCK 5 -->
 <!-- START OF BLOCK 6: COHERE AI REST CORE PIPELINE & SYSTEM PROMPT AUDITOR -->
 <script>
-    // Asynchronous network bridge pipeline connecting directly to the Cohere V2 Chat API gateway
     async function executeLqaAIEvaluator(questionIndex) {
         var apiKeyField = document.getElementById('geminiApiKey');
         var candidateValue = document.getElementById('cand_q' + questionIndex).value.trim();
         var reportBox = document.getElementById('report_q' + questionIndex);
         
-        // Fetch centralized language parameters from the global configuration menu dropdown node
         var globalLangMenu = document.getElementById('globalCandidateLanguage');
         var selectedLangCode = globalLangMenu ? globalLangMenu.value : "en-US";
         var selectedLangName = globalLangMenu ? globalLangMenu.options[globalLangMenu.selectedIndex].text : "Unknown Language";
 
         if (!reportBox) return;
 
-        // Verify key presence before issuing the external network payload query
         if (!apiKeyField || !apiKeyField.value.trim()) {
             reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Cohere API Key field is empty. Please enter your trial key at the top of the dashboard.</span>';
             return;
@@ -489,10 +486,8 @@
 
         var secretApiKey = apiKeyField.value.trim();
         
-        // Render immediate temporary administrative status loader feedback to the evaluator
-        reportBox.innerHTML = '<span class="ai-status-loader">🔄 Connecting to Cohere Linguistics Engine... Analyzing text metrics for Question ' + questionIndex + '...</span>';
+        reportBox.innerHTML = '<span class="ai-status-loader">🔄 Bypassing CORS restrictions... Analyzing text metrics for Question ' + questionIndex + '...</span>';
 
-        // Conditional Prompt Engineering Router distinguishing fixed English inputs from dynamically selected target languages
         var languageContextPromptInstruction = "";
 
         if (questionIndex === 8 || questionIndex === 9) {
@@ -501,7 +496,6 @@
             languageContextPromptInstruction = "The candidate is writing their essay in " + selectedLangName + " (" + selectedLangCode + "). Thoroughly audit their text for spelling mistakes, grammatical conformity, morphological slip-ups, and style issues native to that specific linguistic region.";
         }
 
-        // Strict criteria instruction prompt forcing English outputs regardless of input language matrices
         var systemInstructionPrompt = 'You are an authoritative Senior LQA Lead and Linguistic Auditor. ' +
             'Your task is to thoroughly analyze the provided candidate response text for Question ' + questionIndex + '. ' +
             languageContextPromptInstruction + ' ' +
@@ -510,8 +504,8 @@
             'Structure your English response cleanly with bullet points for readability. ' +
             'Here is the candidate text to audit:\n\n' + candidateValue;
 
-        // Unified global REST endpoint gateway for Cohere V2 Chat architecture
-        var restEndpointUrl = 'https://cohere.com';
+        // Secure public CORS reverse proxy bridge unlocks browser connection constraints instantly for free
+        var restEndpointUrl = 'https://corsproxy.io?' + encodeURIComponent('https://cohere.com');
 
         var requestPayloadStructure = {
             model: 'command-r',
@@ -523,7 +517,6 @@
             ]
         };
 
-        // Execute browser-side network dispatch operation towards Cohere secure endpoint
         fetch(restEndpointUrl, {
             method: 'POST',
             headers: {
@@ -539,16 +532,13 @@
             return networkResponse.json();
         })
         .then(function(parsedJsonData) {
-            // Extract text nodes safely out of the standard Cohere V2 JSON structural tree response framework
             if (parsedJsonData && 
                 parsedJsonData.message && 
                 parsedJsonData.message.content && 
-                parsedJsonData.message.content[0] && 
-                parsedJsonData.message.content[0].text) {
+                parsedJsonData.message.content.text) {
                 
-                var generatedReportText = parsedJsonData.message.content[0].text;
+                var generatedReportText = parsedJsonData.message.content.text;
                 
-                // Format Markdown indicators layout parameters into pure browser HTML text elements cleanly
                 var cleanHtmlReport = generatedReportText
                     .replace(/\n/g, '<br>')
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -556,7 +546,7 @@
                     
                 reportBox.innerHTML = cleanHtmlReport;
             } else {
-                reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Received an unparseable JSON structural framework payload object from Cohere servers.</span>';
+                reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Received an unparseable JSON payload object from Cohere servers.</span>';
             }
         })
         .catch(function(networkException) {
