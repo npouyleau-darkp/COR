@@ -516,7 +516,6 @@
         };
 
         var targetCohereUrl = 'https://cohere.com';
-        // Fix: Restored the explicit cross-origin proxy endpoint parsing parameter string format
         var secureBypassUrl = 'https://allorigins.win' + encodeURIComponent(targetCohereUrl);
 
         fetch(secureBypassUrl, {
@@ -579,7 +578,7 @@
         cleanString = cleanString.replace(new RegExp("\u003C", "g"), "&lt;");
         cleanString = cleanString.replace(new RegExp("\u003E", "g"), "&gt;");
         cleanString = cleanString.replace(new RegExp('"', "g"), "&quot;");
-        cleanString = cleanString.replace(new RegExp("'", "g"), "&#039;");
+        cleanString = cleanString.replace(new RegExp("'", "g"), "'");
         return cleanString;
     }
 </script>
