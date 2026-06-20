@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LQA Review & Grading Dashboard</title>
+    <title>LQA Review & Grading Dashboard (Europe/Vertex AI Edition)</title>
     
     <!-- Unified administrative stylesheet optimizing evaluators interface properties -->
     <style>
@@ -84,14 +84,22 @@
         
         @media (max-width: 1750px) { .temporary-todo-float { display: none !important; } }
 
-        /* Secure cryptographic key setup framework properties */
-        .api-key-config-wrapper {
+        /* Unified configuration console framework for secure administrative inputs */
+        .administrative-config-panel {
             background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px;
-            padding: 16px 20px; margin-bottom: 30px; display: flex; align-items: center; gap: 15px;
+            padding: 20px; margin-bottom: 30px; display: flex; flex-direction: column; gap: 15px;
         }
-        .dark-mode .api-key-config-wrapper { background: #334155; border-color: #475569; }
-        .api-key-label { font-size: 13.5px; font-weight: 700; color: var(--title-color); white-space: nowrap; }
-        .api-key-input { flex: 1; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--container-bg); color: var(--title-color); font-size: 14px; }
+        .dark-mode .administrative-config-panel { background: #334155; border-color: #475569; }
+        
+        .config-row-flex { display: flex; align-items: center; gap: 15px; width: 100%; }
+        .config-label-text { font-size: 13.5px; font-weight: 700; color: var(--title-color); white-space: nowrap; min-width: 190px; }
+        
+        .config-input-field, .config-select-menu { 
+            flex: 1; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 6px; 
+            background-color: var(--container-bg); color: var(--title-color); font-size: 14px; 
+            box-sizing: border-box; transition: border-color 0.2s;
+        }
+        .config-input-field:focus, .config-select-menu:focus { border-color: #2563eb; outline: none; }
     </style>
 </head>
 <body>
@@ -123,15 +131,13 @@
         }
         textarea:focus { border-color: #2563eb; outline: none; }
 
-        .action-trigger-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 15px; }
+        .action-trigger-row { display: flex; justify-content: flex-end; align-items: center; margin-top: 12px; gap: 15px; }
         
         .btn-action { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.2s ease; }
         .btn-diff { background-color: #3b82f6; color: white; }
         .btn-diff:hover { background-color: #2563eb; }
         .btn-ai { background-color: #8b5cf6; color: white; }
         .btn-ai:hover { background-color: #7c3aed; }
-        
-        .lang-selector-inline { padding: 8px 12px; font-size: 13.5px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--container-bg); color: var(--title-color); }
 
         /* --- GRANULAR DIFF-CHECKING HIGHLIGHT METRICS --- */
         .report-display-box {
@@ -182,16 +188,59 @@
             <button type="button" class="theme-toggle-btn" id="themeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
         </div>
 
-        <!-- Safe client-side API configuration layer preventing permanent data storage leaks on public repositories -->
-        <div class="api-key-config-wrapper">
-            <span class="api-key-label">🔐 Google AI (Gemini) API Key:</span>
-            <input type="password" id="geminiApiKey" class="api-key-input" placeholder="Paste your free Gemini API key here to enable automated linguistic evaluation...">
+        <!-- Centralized configuration panel eliminating multi-dropdown clutter across individual cards -->
+        <div class="administrative-config-panel">
+            <div class="config-row-flex">
+                <span class="config-label-text">🔐 Vertex AI API Key:</span>
+                <input type="password" id="geminiApiKey" class="config-input-field" placeholder="Paste your Google Cloud Vertex AI authorized API key here...">
+            </div>
+            <div class="config-row-flex">
+                <span class="config-label-text">🌍 Candidate Language:</span>
+                <select id="globalCandidateLanguage" class="config-select-menu">
+                    <!-- Western & Northern Europe -->
+                    <option value="fr-FR">French (FR)</option>
+                    <option value="de-DE">German (DE)</option>
+                    <option value="it-IT">Italian (IT)</option>
+                    <option value="nl-NL">Dutch (NL)</option>
+                    <option value="sv-SE">Swedish (SE)</option>
+                    <option value="no-NO">Norwegian (NO)</option>
+                    <option value="da-DK">Danish (DK)</option>
+                    <option value="fi-FI">Finnish (FI)</option>
+                    <!-- Ibero-Romance Variants -->
+                    <option value="es-ES">Spanish (Spain)</option>
+                    <option value="es-419">Spanish (Latin America)</option>
+                    <option value="pt-PT">Portuguese (Portugal)</option>
+                    <option value="pt-BR">Portuguese (Brazil)</option>
+                    <!-- Eastern Europe & Eurasia -->
+                    <option value="ru-RU">Russian (RU)</option>
+                    <option value="pl-PL">Polish (PL)</option>
+                    <option value="cs-CZ">Czech (CZ)</option>
+                    <option value="hu-HU">Hungarian (HU)</option>
+                    <option value="el-GR">Greek (GR)</option>
+                    <option value="tr-TR">Turkish (TR)</option>
+                    <option value="uk-UA">Ukrainian (UA)</option>
+                    <option value="ro-RO">Romanian (RO)</option>
+                    <option value="bg-BG">Bulgarian (BG)</option>
+                    <!-- Middle East & South Asia -->
+                    <option value="ar-AA">Arabic (RTL)</option>
+                    <option value="hi-IN">Hindi (IN)</option>
+                    <!-- East & Southeast Asia -->
+                    <option value="zh-CN">Chinese (Simplified)</option>
+                    <option value="zh-TW">Chinese (Traditional - TW)</option>
+                    <option value="zh-HK">Chinese (Traditional - HK)</option>
+                    <option value="ja-JP">Japanese (JP)</option>
+                    <option value="ko-KR">Korean (KR)</option>
+                    <option value="vi-VN">Vietnamese (VN)</option>
+                    <option value="th-TH">Thai (TH)</option>
+                    <option value="ms-MY">Malay (MY)</option>
+                    <option value="id-ID">Indonesian (ID)</option>
+                </select>
+            </div>
         </div>
 
         <div class="split-layout">
             <div class="main-content">
                 
-                <!-- ==================== SECTION B: PROOFREADING EVALUATION ==================== -->
                 <div class="section-title">Section B: Proofreading / Translation Grading</div>
                 
                 <!-- QUESTION 5 BLOCK -->
@@ -202,13 +251,8 @@
                         <textarea id="ref_q5" rows="2" placeholder="Paste your authoritative correct translation string here..."></textarea>
                     </div>
                     <div class="action-trigger-row">
-                        <select id="lang_q5" class="lang-selector-inline">
-                            <option value="spaced">Spaced Script (Western/Cyrillic/RTL)</option>
-                            <option value="cjk">CJK Script (Chinese/Japanese Character-by-Character)</option>
-                        </select>
                         <button type="button" class="btn-action btn-diff" onclick="executeLqaDiffAuditor(5)">Run Diff Comparison</button>
                     </div>
-                    <!-- Bidirectional plaintext rendering prevents punctuation loops in non-spaced or RTL parameters -->
                     <div id="report_q5" class="report-display-box" dir="auto" style="unicode-bidi: plaintext;">[Diff report output container empty]</div>
                 </div>
 
@@ -220,10 +264,6 @@
                         <textarea id="ref_q6" rows="2" placeholder="Paste your authoritative correct translation string here..."></textarea>
                     </div>
                     <div class="action-trigger-row">
-                        <select id="lang_q6" class="lang-selector-inline">
-                            <option value="spaced">Spaced Script (Western/Cyrillic/RTL)</option>
-                            <option value="cjk">CJK Script (Chinese/Japanese Character-by-Character)</option>
-                        </select>
                         <button type="button" class="btn-action btn-diff" onclick="executeLqaDiffAuditor(6)">Run Diff Comparison</button>
                     </div>
                     <div id="report_q6" class="report-display-box" dir="auto" style="unicode-bidi: plaintext;">[Diff report output container empty]</div>
@@ -237,10 +277,6 @@
                         <textarea id="ref_q7" rows="2" placeholder="Paste your authoritative correct translation string here..."></textarea>
                     </div>
                     <div class="action-trigger-row">
-                        <select id="lang_q7" class="lang-selector-inline">
-                            <option value="spaced">Spaced Script (Western/Cyrillic/RTL)</option>
-                            <option value="cjk">CJK Script (Chinese/Japanese Character-by-Character)</option>
-                        </select>
                         <button type="button" class="btn-action btn-diff" onclick="executeLqaDiffAuditor(7)">Run Diff Comparison</button>
                     </div>
                     <div id="report_q7" class="report-display-box" dir="auto" style="unicode-bidi: plaintext;">[Diff report output container empty]</div>
@@ -252,19 +288,9 @@
                 
                 <!-- QUESTION 8 BLOCK -->
                 <div class="grading-card">
-                    <span class="card-header-label">Question 8 (Recent Game Essay) - Automated AI Audit Node</span>
+                    <span class="card-header-label">Question 8 (Recent Game Essay - Fixed English Input) - Automated AI Audit Node</span>
                     <textarea id="cand_q8" rows="4" placeholder="Paste candidate long-form essay response here..."></textarea>
                     <div class="action-trigger-row">
-                        <select id="lang_q8" class="lang-selector-inline">
-                            <option value="French">French</option><option value="German">German</option>
-                            <option value="Italian">Italian</option><option value="Spanish">Spanish</option>
-                            <option value="Portuguese">Portuguese</option><option value="Russian">Russian</option>
-                            <option value="Turkish">Turkish</option><option value="Swedish">Swedish</option>
-                            <option value="Arabic">Arabic</option><option value="Hindi">Hindi</option>
-                            <option value="Chinese">Chinese</option><option value="Japanese">Japanese</option>
-                            <option value="Korean">Korean</option><option value="Thai">Thai</option>
-                            <option value="Other / Spaced">Other Language</option>
-                        </select>
                         <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(8)">Analyze Text with Gemini</button>
                     </div>
                     <div id="report_q8" class="report-display-box" dir="auto" style="unicode-bidi: plaintext;">[Automated AI grading report empty]</div>
@@ -272,19 +298,9 @@
 
                 <!-- QUESTION 9 BLOCK -->
                 <div class="grading-card">
-                    <span class="card-header-label">Question 9 (Nicolas & Kindness Opinion) - Automated AI Audit Node</span>
+                    <span class="card-header-label">Question 9 (Nicolas & Kindness Opinion - Fixed English Input) - Automated AI Audit Node</span>
                     <textarea id="cand_q9" rows="4" placeholder="Paste candidate long-form essay response here..."></textarea>
                     <div class="action-trigger-row">
-                        <select id="lang_q9" class="lang-selector-inline">
-                            <option value="French">French</option><option value="German">German</option>
-                            <option value="Italian">Italian</option><option value="Spanish">Spanish</option>
-                            <option value="Portuguese">Portuguese</option><option value="Russian">Russian</option>
-                            <option value="Turkish">Turkish</option><option value="Swedish">Swedish</option>
-                            <option value="Arabic">Arabic</option><option value="Hindi">Hindi</option>
-                            <option value="Chinese">Chinese</option><option value="Japanese">Japanese</option>
-                            <option value="Korean">Korean</option><option value="Thai">Thai</option>
-                            <option value="Other / Spaced">Other Language</option>
-                        </select>
                         <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(9)">Analyze Text with Gemini</button>
                     </div>
                     <div id="report_q9" class="report-display-box" dir="auto" style="unicode-bidi: plaintext;">[Automated AI grading report empty]</div>
@@ -292,19 +308,9 @@
 
                 <!-- QUESTION 10 BLOCK -->
                 <div class="grading-card">
-                    <span class="card-header-label">Question 10 (Proverb / Yoda Analysis) - Automated AI Audit Node</span>
+                    <span class="card-header-label">Question 10 (Proverb / Yoda Analysis - Multi-Language) - Automated AI Audit Node</span>
                     <textarea id="cand_q10" rows="4" placeholder="Paste candidate long-form essay response here..."></textarea>
                     <div class="action-trigger-row">
-                        <select id="lang_q10" class="lang-selector-inline">
-                            <option value="French">French</option><option value="German">German</option>
-                            <option value="Italian">Italian</option><option value="Spanish">Spanish</option>
-                            <option value="Portuguese">Portuguese</option><option value="Russian">Russian</option>
-                            <option value="Turkish">Turkish</option><option value="Swedish">Swedish</option>
-                            <option value="Arabic">Arabic</option><option value="Hindi">Hindi</option>
-                            <option value="Chinese">Chinese</option><option value="Japanese">Japanese</option>
-                            <option value="Korean">Korean</option><option value="Thai">Thai</option>
-                            <option value="Other / Spaced">Other Language</option>
-                        </select>
                         <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(10)">Analyze Text with Gemini</button>
                     </div>
                     <div id="report_q10" class="report-display-box" dir="auto" style="unicode-bidi: plaintext;">[Automated AI grading report empty]</div>
@@ -318,27 +324,27 @@
 <!-- START OF BLOCK 5: LOCAL DIFF-CHECKING ENGINE & MULTILINGUAL FALLBACK ENGINE -->
 <script>
     function toggleDarkMode() {
-        const body = document.body;
-        const btn = document.getElementById('themeToggle');
+        var body = document.body;
+        var btn = document.getElementById('themeToggle');
         if (!body || !btn) return;
         body.classList.toggle('dark-mode');
-        const mode = body.classList.contains('dark-mode') ? 'dark' : 'light';
+        var mode = body.classList.contains('dark-mode') ? 'dark' : 'light';
         btn.innerHTML = mode === 'dark' ? "☀️ Light Mode" : "🌙 Dark Mode";
     }
 
     function clearDashboardFields() {
         if (confirm("Are you sure you want to clear all data text fields in this grading dashboard?")) {
-            for (let i = 5; i <= 7; i++) {
-                const cand = document.getElementById('cand_q' + i);
-                const ref = document.getElementById('ref_q' + i);
-                const rpt = document.getElementById('report_q' + i);
+            for (var i = 5; i <= 7; i++) {
+                var cand = document.getElementById('cand_q' + i);
+                var ref = document.getElementById('ref_q' + i);
+                var rpt = document.getElementById('report_q' + i);
                 if (cand) cand.value = "";
                 if (ref) ref.value = "";
                 if (rpt) rpt.innerHTML = "[Diff report output container empty]";
             }
-            for (let i = 8; i <= 10; i++) {
-                const cand = document.getElementById('cand_q' + i);
-                const rpt = document.getElementById('report_q' + i);
+            for (var i = 8; i <= 10; i++) {
+                var cand = document.getElementById('cand_q' + i);
+                var rpt = document.getElementById('report_q' + i);
                 if (cand) cand.value = "";
                 if (rpt) rpt.innerHTML = "[Automated AI grading report empty]";
             }
@@ -347,32 +353,31 @@
 
     // High-performance client-side text difference engine matching LQA standards
     function computeLqaTextDiffSegments(sourceText, targetText, sortingMode) {
-        const cleanSource = sourceText || "";
-        const cleanTarget = targetText || "";
+        var cleanSource = sourceText || "";
+        var cleanTarget = targetText || "";
         
-        let sourceTokensArray = [];
-        let targetTokensArray = [];
+        var sourceTokensArray = [];
+        var targetTokensArray = [];
 
         if (sortingMode === "cjk") {
             sourceTokensArray = Array.from(cleanSource);
             targetTokensArray = Array.from(cleanTarget);
         } else {
-            // Secure standalone string instance prevents coloring interpretation break loops
-            let spaceRegPattern = "(\\s+)";
-            let spaceSplitterObj = new RegExp(spaceRegPattern, "");
+            var spaceRegPattern = "(\\s+)";
+            var spaceSplitterObj = new RegExp(spaceRegPattern, "");
             sourceTokensArray = cleanSource.split(spaceSplitterObj);
             targetTokensArray = cleanTarget.split(spaceSplitterObj);
         }
 
-        const sourceLength = sourceTokensArray.length;
-        const targetLength = targetTokensArray.length;
+        var sourceLength = sourceTokensArray.length;
+        var targetLength = targetTokensArray.length;
         
-        const matrixGrid = Array(sourceLength + 1).fill(null).map(function() { 
+        var matrixGrid = Array(sourceLength + 1).fill(null).map(function() { 
             return Array(targetLength + 1).fill(0); 
         });
 
-        for (let i = 1; i <= sourceLength; i++) {
-            for (let j = 1; j <= targetLength; j++) {
+        for (var i = 1; i <= sourceLength; i++) {
+            for (var j = 1; j <= targetLength; j++) {
                 if (sourceTokensArray[i - 1] === targetTokensArray[j - 1]) {
                     matrixGrid[i][j] = matrixGrid[i - 1][j - 1] + 1;
                 } else {
@@ -381,9 +386,9 @@
             }
         }
 
-        let iCounter = sourceLength;
-        let jCounter = targetLength;
-        const completeHtmlResultSegments = [];
+        var iCounter = sourceLength;
+        var jCounter = targetLength;
+        var completeHtmlResultSegments = [];
 
         while (iCounter > 0 || jCounter > 0) {
             if (iCounter > 0 && jCounter > 0 && sourceTokensArray[iCounter - 1] === targetTokensArray[jCounter - 1]) {
@@ -391,24 +396,24 @@
                 iCounter--;
                 jCounter--;
             } else if (jCounter > 0 && (iCounter === 0 || matrixGrid[iCounter][jCounter - 1] >= matrixGrid[iCounter - 1][jCounter])) {
-                const token = targetTokensArray[jCounter - 1];
-                if (token.trim() === "" && sortingMode !== "cjk") {
-                    completeHtmlResultSegments.unshift(token);
+                var tokenInsert = targetTokensArray[jCounter - 1];
+                if (tokenInsert.trim() === "" && sortingMode !== "cjk") {
+                    completeHtmlResultSegments.unshift(tokenInsert);
                 } else {
-                    let openTag = '<span class="diff-insertion">';
-                    let closeTag = '</span>';
-                    let escapedToken = escapeHtmlHtmlEntities(token);
+                    var openTag = '<span class="diff-insertion">';
+                    var closeTag = '</span>';
+                    var escapedToken = escapeHtmlHtmlEntities(tokenInsert);
                     completeHtmlResultSegments.unshift(openTag + escapedToken + closeTag);
                 }
                 jCounter--;
             } else {
-                const token = sourceTokensArray[iCounter - 1];
-                if (token.trim() === "" && sortingMode !== "cjk") {
-                    // Keep layout empty spaces properties intact
+                var tokenDelete = sourceTokensArray[iCounter - 1];
+                if (tokenDelete.trim() === "" && sortingMode !== "cjk") {
+                    // Retain blank formatting spaces layout properties
                 } else {
-                    let openDelTag = '<span class="diff-deletion">';
-                    let closeDelTag = '</span>';
-                    let escapedSrcToken = escapeHtmlHtmlEntities(token);
+                    var openDelTag = '<span class="diff-deletion">';
+                    var closeDelTag = '</span>';
+                    var escapedSrcToken = escapeHtmlHtmlEntities(tokenDelete);
                     completeHtmlResultSegments.unshift(openDelTag + escapedSrcToken + closeDelTag);
                 }
                 iCounter--;
@@ -420,7 +425,7 @@
 
     // Hexadecimal unicode strings bypass completely the visual token parsing engine limitations of text editors
     function escapeHtmlHtmlEntities(rawStringText) {
-        let cleanString = rawStringText || "";
+        var cleanString = rawStringText || "";
         cleanString = cleanString.replace(new RegExp("&", "g"), "&amp;");
         cleanString = cleanString.replace(new RegExp("\u003C", "g"), "&lt;");
         cleanString = cleanString.replace(new RegExp("\u003E", "g"), "&gt;");
@@ -430,40 +435,51 @@
     }
 
     function executeLqaDiffAuditor(questionIndex) {
-        const candidateValue = document.getElementById('cand_q' + questionIndex).value;
-        const referenceValue = document.getElementById('ref_q' + questionIndex).value;
-        const scriptMode = document.getElementById('lang_q' + questionIndex).value;
-        const reportBox = document.getElementById('report_q' + questionIndex);
-
+        var candidateValue = document.getElementById('cand_q' + questionIndex).value;
+        var referenceValue = document.getElementById('ref_q' + questionIndex).value;
+        var globalLangMenu = document.getElementById('globalCandidateLanguage');
+        var selectedLangCode = globalLangMenu ? globalLangMenu.value : "en-US";
+        
+        // Automated alignment mode check mapping directly against central configuration properties
+        var scriptMode = "spaced";
+        if (selectedLangCode.indexOf("zh") === 0 || selectedLangCode.indexOf("ja") === 0) {
+            scriptMode = "cjk";
+        }
+        
+        var reportBox = document.getElementById('report_q' + questionIndex);
         if (!reportBox) return;
 
         if (!candidateValue.trim() && !referenceValue.trim()) {
-            let errSpan = '<span style="color:#dc2626; font-weight:600;">';
-            let errMsg = 'Error: Inputs are empty.';
-            let endSpan = '</span>';
+            var errSpan = '<span style="color:#dc2626; font-weight:600;">';
+            var errMsg = 'Error: Inputs are empty.';
+            var endSpan = '</span>';
             reportBox.innerHTML = errSpan + errMsg + endSpan;
             return;
         }
 
-        const compiledDiffOutputHtml = computeLqaTextDiffSegments(candidateValue, referenceValue, scriptMode);
+        var compiledDiffOutputHtml = computeLqaTextDiffSegments(candidateValue, referenceValue, scriptMode);
         reportBox.innerHTML = compiledDiffOutputHtml;
     }
 </script>
 <!-- END OF BLOCK 5 -->
 <!-- START OF BLOCK 6: GOOGLE AI GEMINI REST CORE PIPELINE & SYSTEM PROMPT AUDITOR -->
 <script>
-    // Asynchronous network bridge pipeline connecting directly to the Google AI Studio REST gateway
+    // Asynchronous network bridge pipeline connecting directly to the Google Cloud Vertex AI European infrastructure
     async function executeLqaAIEvaluator(questionIndex) {
         var apiKeyField = document.getElementById('geminiApiKey');
         var candidateValue = document.getElementById('cand_q' + questionIndex).value.trim();
-        var languageSelected = document.getElementById('lang_q' + questionIndex).value;
         var reportBox = document.getElementById('report_q' + questionIndex);
+        
+        // Fetch centralized language parameters from the global configuration menu dropdown node
+        var globalLangMenu = document.getElementById('globalCandidateLanguage');
+        var selectedLangCode = globalLangMenu ? globalLangMenu.value : "en-US";
+        var selectedLangName = globalLangMenu ? globalLangMenu.options[globalLangMenu.selectedIndex].text : "Unknown Language";
 
         if (!reportBox) return;
 
         // Verify hardware parameters presence before issuing the external network payload query
         if (!apiKeyField || !apiKeyField.value.trim()) {
-            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Google AI API Key field is empty. Please enter your secret key at the top of the dashboard.</span>';
+            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Vertex AI API Key field is empty. Please enter your authorized key at the top of the dashboard.</span>';
             return;
         }
         if (!candidateValue) {
@@ -474,18 +490,30 @@
         var secretApiKey = apiKeyField.value.trim();
         
         // Render immediate temporary administrative status loader feedback to the evaluator
-        reportBox.innerHTML = '<span class="ai-status-loader">🔄 Connecting to Google AI Studio... Analyzing text metrics for Question ' + questionIndex + ' (' + languageSelected + ')...</span>';
+        reportBox.innerHTML = '<span class="ai-status-loader">🔄 Connecting to European Cloud Nodes (Vertex AI)... Analyzing text metrics for Question ' + questionIndex + '...</span>';
 
-        // Strict system criteria prompt forcing English outputs while enforcing advanced LQA assessment rules
+        // Conditional Prompt Engineering Router distinguishing fixed English inputs from dynamically selected target languages
+        var targetLqaLanguage = "English (Fixed Prompt Evaluation Framework)";
+        var languageContextPromptInstruction = "";
+
+        if (questionIndex === 8 || questionIndex === 9) {
+            targetLqaLanguage = "English";
+            languageContextPromptInstruction = "The candidate is a non-native speaker writing a long-form essay directly in English. Evaluate their text carefully for spelling, vocabulary choices, sentence structure, and overall natural fluency in English.";
+        } else if (questionIndex === 10) {
+            targetLqaLanguage = selectedLangName;
+            languageContextPromptInstruction = "The candidate is writing their essay in " + selectedLangName + " (" + selectedLangCode + "). Thoroughly audit their text for spelling mistakes, grammatical conformity, morphological slip-ups, and style issues native to that specific linguistic region.";
+        }
+
+        // Strict criteria instruction prompt forcing English outputs regardless of input language matrices
         var systemInstructionPrompt = 'You are an authoritative Senior LQA Lead and Linguistic Auditor. ' +
             'Your task is to thoroughly analyze the provided candidate response text for Question ' + questionIndex + '. ' +
-            'The candidate is writing an essay in ' + languageSelected + '. ' +
+            languageContextPromptInstruction + ' ' +
             'Evaluate the text across these pillars: Spelling Accuracy, Grammatical Conformity, Structural Fluency, and Stylistic Quality. ' +
-            'CRITICAL REQUIREMENT: Even though the candidate text is written in ' + languageSelected + ', you MUST write your entire analysis, grading report, error log, and commentary STRICTLY IN ENGLISH. ' +
+            'CRITICAL REQUIREMENT: Even though the candidate text may be written in another language, you MUST write your entire analysis, grading report, error log, and commentary STRICTLY IN ENGLISH. ' +
             'Structure your English response cleanly with bullet points for readability. ' +
             'Here is the candidate text to audit:\n\n' + candidateValue;
 
-        // Unified endpoint routing mapping towards the Gemini 1.5 Flash deployment engine
+        // Unified professional European REST endpoint gateway for Gemini 1.5 Flash (Vertex AI Protocol)
         var restEndpointUrl = 'https://googleapis.com' + secretApiKey;
 
         var requestPayloadStructure = {
@@ -498,7 +526,7 @@
             ]
         };
 
-        // Execute raw browser-side network dispatch operation
+        // Execute browser-side network dispatch operation towards regional nodes
         fetch(restEndpointUrl, {
             method: 'POST',
             headers: {
@@ -513,7 +541,7 @@
             return networkResponse.json();
         })
         .then(function(parsedJsonData) {
-            // Extract text nodes safely out of the standard Google AI response framework tree
+            // Extract text nodes safely out of the professional Vertex AI JSON structural tree response framework
             if (parsedJsonData && 
                 parsedJsonData.candidates && 
                 parsedJsonData.candidates[0] && 
@@ -523,7 +551,7 @@
                 
                 var generatedReportText = parsedJsonData.candidates[0].content.parts[0].text;
                 
-                // Format markdown line breaks into clear administrative block paragraphs
+                // Format Markdown indicators layout parameters into pure browser HTML text elements cleanly
                 var cleanHtmlReport = generatedReportText
                     .replace(/\n/g, '<br>')
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -531,12 +559,12 @@
                     
                 reportBox.innerHTML = cleanHtmlReport;
             } else {
-                reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Received an unparseable JSON structural framework payload object from Google AI servers.</span>';
+                reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Received an unparseable JSON structural framework payload object from the European servers.</span>';
             }
         })
         .catch(function(networkException) {
-            console.error('Google AI infrastructure transaction failure exception handled gracefully:', networkException);
-            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">API Connection Failed: ' + escapeHtmlHtmlEntities(networkException.message) + '. Please check your API key validity, network connectivity, or quota limits.</span>';
+            console.error('Google Cloud infrastructure transaction failure exception handled gracefully:', networkException);
+            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">API Connection Failed: ' + escapeHtmlHtmlEntities(networkException.message) + '. Please check your API key validity, network connectivity, or project quotas.</span>';
         });
     }
 </script>
