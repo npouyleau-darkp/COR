@@ -462,22 +462,24 @@
     }
 </script>
 <!-- END OF BLOCK 5 -->
-<!-- START OF BLOCK 6: GOOGLE AI GEMINI REST CORE PIPELINE & SYSTEM PROMPT AUDITOR -->
+<!-- START OF BLOCK 6: COHERE AI REST CORE PIPELINE & SYSTEM PROMPT AUDITOR -->
 <script>
-    // Asynchronous network bridge pipeline connecting directly to the Google Gemini Enterprise REST gateway
+    // Asynchronous network bridge pipeline connecting directly to the Cohere V2 Chat API gateway
     async function executeLqaAIEvaluator(questionIndex) {
         var apiKeyField = document.getElementById('geminiApiKey');
         var candidateValue = document.getElementById('cand_q' + questionIndex).value.trim();
         var reportBox = document.getElementById('report_q' + questionIndex);
         
+        // Fetch centralized language parameters from the global configuration menu dropdown node
         var globalLangMenu = document.getElementById('globalCandidateLanguage');
         var selectedLangCode = globalLangMenu ? globalLangMenu.value : "en-US";
         var selectedLangName = globalLangMenu ? globalLangMenu.options[globalLangMenu.selectedIndex].text : "Unknown Language";
 
         if (!reportBox) return;
 
+        // Verify key presence before issuing the external network payload query
         if (!apiKeyField || !apiKeyField.value.trim()) {
-            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Gemini API Key field is empty. Please enter your secret key at the top of the dashboard.</span>';
+            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Cohere API Key field is empty. Please enter your trial key at the top of the dashboard.</span>';
             return;
         }
         if (!candidateValue) {
@@ -487,19 +489,19 @@
 
         var secretApiKey = apiKeyField.value.trim();
         
-        reportBox.innerHTML = '<span class="ai-status-loader">🔄 Connecting to Gemini Enterprise Platform... Analyzing text metrics for Question ' + questionIndex + '...</span>';
+        // Render immediate temporary administrative status loader feedback to the evaluator
+        reportBox.innerHTML = '<span class="ai-status-loader">🔄 Connecting to Cohere Linguistics Engine... Analyzing text metrics for Question ' + questionIndex + '...</span>';
 
-        var targetLqaLanguage = "English (Fixed Prompt Evaluation Framework)";
+        // Conditional Prompt Engineering Router distinguishing fixed English inputs from dynamically selected target languages
         var languageContextPromptInstruction = "";
 
         if (questionIndex === 8 || questionIndex === 9) {
-            targetLqaLanguage = "English";
             languageContextPromptInstruction = "The candidate is a non-native speaker writing a long-form essay directly in English. Evaluate their text carefully for spelling, vocabulary choices, sentence structure, and overall natural fluency in English.";
         } else if (questionIndex === 10) {
-            targetLqaLanguage = selectedLangName;
             languageContextPromptInstruction = "The candidate is writing their essay in " + selectedLangName + " (" + selectedLangCode + "). Thoroughly audit their text for spelling mistakes, grammatical conformity, morphological slip-ups, and style issues native to that specific linguistic region.";
         }
 
+        // Strict criteria instruction prompt forcing English outputs regardless of input language matrices
         var systemInstructionPrompt = 'You are an authoritative Senior LQA Lead and Linguistic Auditor. ' +
             'Your task is to thoroughly analyze the provided candidate response text for Question ' + questionIndex + '. ' +
             languageContextPromptInstruction + ' ' +
@@ -508,22 +510,24 @@
             'Structure your English response cleanly with bullet points for readability. ' +
             'Here is the candidate text to audit:\n\n' + candidateValue;
 
-        // Enhanced Enterprise Endpoints Protocol compatible with European Gemini 3 API frameworks
-        var restEndpointUrl = 'https://googleapis.com' + secretApiKey;
+        // Unified global REST endpoint gateway for Cohere V2 Chat architecture
+        var restEndpointUrl = 'https://cohere.com';
 
         var requestPayloadStructure = {
-            contents: [
+            model: 'command-r',
+            messages: [
                 {
-                    parts: [
-                        { text: systemInstructionPrompt }
-                    ]
+                    role: 'user',
+                    content: systemInstructionPrompt
                 }
             ]
         };
 
+        // Execute browser-side network dispatch operation towards Cohere secure endpoint
         fetch(restEndpointUrl, {
             method: 'POST',
             headers: {
+                'Authorization': 'Bearer ' + secretApiKey,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(requestPayloadStructure)
@@ -535,15 +539,16 @@
             return networkResponse.json();
         })
         .then(function(parsedJsonData) {
+            // Extract text nodes safely out of the standard Cohere V2 JSON structural tree response framework
             if (parsedJsonData && 
-                parsedJsonData.candidates && 
-                parsedJsonData.candidates[0] && 
-                parsedJsonData.candidates[0].content && 
-                parsedJsonData.candidates[0].content.parts && 
-                parsedJsonData.candidates[0].content.parts[0]) {
+                parsedJsonData.message && 
+                parsedJsonData.message.content && 
+                parsedJsonData.message.content[0] && 
+                parsedJsonData.message.content[0].text) {
                 
-                var generatedReportText = parsedJsonData.candidates[0].content.parts[0].text;
+                var generatedReportText = parsedJsonData.message.content[0].text;
                 
+                // Format Markdown indicators layout parameters into pure browser HTML text elements cleanly
                 var cleanHtmlReport = generatedReportText
                     .replace(/\n/g, '<br>')
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -551,12 +556,12 @@
                     
                 reportBox.innerHTML = cleanHtmlReport;
             } else {
-                reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Received an unparseable JSON framework from Enterprise servers.</span>';
+                reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">Error: Received an unparseable JSON structural framework payload object from Cohere servers.</span>';
             }
         })
         .catch(function(networkException) {
-            console.error('Gemini Enterprise transaction failure exception handled gracefully:', networkException);
-            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">API Connection Failed: ' + escapeHtmlHtmlEntities(networkException.message) + '. Please check your API key validity or browser extension blocks.</span>';
+            console.error('Cohere AI infrastructure transaction failure exception handled gracefully:', networkException);
+            reportBox.innerHTML = '<span style="color:#dc2626; font-weight:600;">API Connection Failed: ' + escapeHtmlHtmlEntities(networkException.message) + '. Please check your API key validity, network connectivity, or rate limits.</span>';
         });
     }
 </script>
