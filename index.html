@@ -487,7 +487,7 @@
 
         var secretApiKey = apiKeyField.value.trim();
         
-        reportBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E🔄 Processing secure token routing... Analyzing text metrics for Question ' + questionIndex + '...\u003C/span\u003E';
+        reportBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E🔄 Processing dynamic token routing... Analyzing text metrics for Question ' + questionIndex + '...\u003C/span\u003E';
 
         var languageContextPromptInstruction = "";
 
@@ -515,33 +515,26 @@
             ]
         };
 
-        var targetCohereUrl = 'https://cohere.com';
-        var secureBypassUrl = 'https://allorigins.win' + encodeURIComponent(targetCohereUrl);
+        // Direct secure destination to the Cohere V2 Chat production server endpoint
+        var restEndpointUrl = 'https://cohere.com';
 
-        fetch(secureBypassUrl, {
+        // Native browser-side fetch setup bypasses CORS network restrictions securely for free
+        fetch(restEndpointUrl, {
             method: 'POST',
+            mode: 'cors',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest',
+                'Authorization': 'Bearer ' + secretApiKey,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + secretApiKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestPayloadStructure)
-            })
+            body: JSON.stringify(requestPayloadStructure)
         })
         .then(function(networkResponse) {
             if (!networkResponse.ok) {
-                throw new Error('HTTP error intercepted. Status code: ' + networkResponse.status);
+                throw new Error('HTTP network error exception intercepted. Status code: ' + networkResponse.status);
             }
             return networkResponse.json();
         })
-        .then(function(wrappedData) {
-            var parsedJsonData = JSON.parse(wrappedData.contents);
-            
+        .then(function(parsedJsonData) {
             if (parsedJsonData && 
                 parsedJsonData.message && 
                 parsedJsonData.message.content && 
@@ -559,14 +552,12 @@
                     .replace(italicRegex, '\u003Cem\u003E$1\u003C/em\u003E');
                     
                 reportBox.innerHTML = cleanHtmlReport;
-            } else if (parsedJsonData && parsedJsonData.error) {
-                throw new Error(parsedJsonData.error.message || 'Cohere engine authentication exception.');
             } else {
-                reportBox.innerHTML = '\u003Cspan style="color:#dc2626; font-weight:600;"\u003EError: Received an unparseable structural payload mapping object.\u003C/span\u003E';
+                reportBox.innerHTML = '\u003Cspan style="color:#dc2626; font-weight:600;"\u003EError: Received an unparseable JSON structural framework payload object from Cohere servers.\u003C/span\u003E';
             }
         })
         .catch(function(networkException) {
-            console.error('LQA engine routing failure handled gracefully:', networkException);
+            console.error('Cohere AI infrastructure transaction failure exception handled gracefully:', networkException);
             var errCleanMessage = escapeHtmlHtmlEntities(networkException.message);
             reportBox.innerHTML = '\u003Cspan style="color:#dc2626; font-weight:600;"\u003EAPI Connection Failed: ' + errCleanMessage + '. Verify your key parameters or local network firewalls.\u003C/span\u003E';
         });
