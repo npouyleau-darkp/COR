@@ -582,24 +582,51 @@
         var promptContextInstruction = "";
 
         if (questionIndex === 8 || questionIndex === 9) {
-            promptContextInstruction = "The candidate is a non-native " +
-                "speaker writing a long-form essay directly in English. " +
-                "Evaluate their text carefully for spelling, vocabulary " +
-                "choices, sentence structure, and overall fluency.";
-        } else if (questionIndex === 10) {
-            promptContextInstruction = "The candidate is writing their " +
-                "essay in " + selectedLangName + " (" + selectedLangCode +
-                "). Thoroughly audit their text for spelling mistakes, " +
-                "grammatical conformity, and regional style issues.";
-        }
+    promptContextInstruction =
+        "The candidate is a non-native speaker writing a long-form essay directly in English. " +
+        "Evaluate the candidate's ability to express ideas clearly, accurately, and professionally in written English. " +
+        "Assess spelling, grammar, vocabulary choice, sentence structure, clarity of expression, logical progression of ideas, and overall fluency. " +
+        "Consider whether the candidate can effectively communicate both simple and complex thoughts in a clear and understandable manner. " +
+        "Distinguish objective language errors from optional stylistic improvements.";
+} else if (questionIndex === 10) {
+    promptContextInstruction =
+        "The candidate is writing their essay in " + selectedLangName +
+        " (" + selectedLangCode + "). " +
+        "Perform a thorough linguistic audit of the text. " +
+        "Assess spelling, grammar, fluency, and regional style appropriateness. " +
+        "Report only issues that are likely genuine language errors. " +
+        "Avoid inventing mistakes or treating valid alternative forms as errors. " +
+        "Distinguish objective language errors from optional stylistic suggestions.";
+}
 
-        var systemInstructionPrompt = 'You are an authoritative Senior ' +
-            'LQA Lead. Analyze the candidate response text for Question ' +
-            questionIndex + '. ' + promptContextInstruction + ' Evaluate ' +
-            'the text across pillars: Spelling, Grammar, Fluency, Style. ' +
-            'CRITICAL REQUIREMENT: You MUST write your entire analysis ' +
-            'STRICTLY IN ENGLISH. Structure with bullet points. ' +
-            'Here is the candidate text to audit:\n\n' + candidateValue;
+var systemInstructionPrompt =
+    'You are an authoritative Senior LQA Lead. ' +
+    'Analyze the candidate response text for Question ' + questionIndex + '. ' +
+    promptContextInstruction + ' ' +
+
+    'Evaluate the text across the following pillars: ' +
+    'Spelling, Grammar, Fluency, Style. ' +
+
+    'Definitions: ' +
+    'Spelling = orthography, spelling mistakes, diacritics, and typographical errors only. ' +
+    'Grammar = agreement, syntax, tense, conjugation, and sentence construction. ' +
+    'Fluency = readability, coherence, transitions, repetition, and natural flow. ' +
+    'Style = register, tone, vocabulary appropriateness, and regional language conventions. ' +
+
+    'Only report issues when you are reasonably confident they are genuine. ' +
+    'Do not invent mistakes. ' +
+    'Do not classify stylistic preferences as grammatical or spelling errors. ' +
+
+    'CRITICAL REQUIREMENT: YOUR ENTIRE RESPONSE MUST BE WRITTEN IN ENGLISH ONLY. ' +
+    'DO NOT WRITE ANY EXPLANATIONS, HEADINGS, COMMENTS, OR SUMMARIES IN ANY OTHER LANGUAGE. ' +
+    'EVEN IF THE CANDIDATE TEXT IS NOT IN ENGLISH, YOUR ANALYSIS MUST REMAIN 100 PERCENT IN ENGLISH. ' +
+
+    'Structure the analysis with bullet points. ' +
+
+    'Candidate text begins below:\n\n' +
+    candidateValue +
+
+    '\n\nREMINDER: WRITE THE ENTIRE AUDIT IN ENGLISH ONLY.';
 
         var requestBody = JSON.stringify({
             model: targetModelId,
