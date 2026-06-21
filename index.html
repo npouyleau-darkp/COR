@@ -529,7 +529,10 @@
         };
 
         // Highly-stable text pipeline gateway splits target endpoint
-        var restEndpointUrl = "https://pollinations.ai";
+                        var motClef = "text";
+                        var rootUrl = "https://" + motClef + ".pollinations.ai/";
+
+
 
         function sendQueryToStableEngine() {
             fetch(restEndpointUrl, {
