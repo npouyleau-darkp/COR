@@ -527,8 +527,10 @@
             }
         };
 
-        var baseApi = "https://huggingface.co";
-        var pathMdl = "models/meta-llama/Meta-Llama-3-8B-Instruct";
+        var baseApi = "https://api-inference.huggingface.co/";
+        // Segmented path payload tracking string variables blocks cut-offs
+        var pathMdl = "models/MistralAI/" + 
+            "Mistral-7B-Instruct-v0.3";
         var restEndpointUrl = baseApi + pathMdl;
 
         function sendQueryToHuggingFaceEngine() {
