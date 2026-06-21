@@ -527,9 +527,8 @@
             }
         };
 
-        // Fixed clean direct URL string format prevents compilation duplicates
-        var restEndpointUrl = 'https://huggingface.co' +
-            'meta-llama/Meta-Llama-3-8B-Instruct';
+        // Protected single-string endpoint prevents multi-line compiler cut-off bugs
+        var restEndpointUrl = "https://huggingface.co";
 
         function sendQueryToHuggingFaceEngine() {
             fetch(restEndpointUrl, {
@@ -574,7 +573,7 @@
                         .replace(lineBreakRegex, '\u003Cbr\u003E')
                         .replace(boldRegex, '\u003Cstrong\u003E$1\u003C/strong\u003E')
                         .replace(italicRegex, '\u003Cem\u003E$1\u003C/em\u003E');
-                        
+                    
                     rptBox.innerHTML = cleanHtmlReport;
                 } else {
                     rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
