@@ -528,13 +528,9 @@
             jsonMode: false
         };
 
-        // Highly-stable text pipeline gateway splits target endpoint
-                        var motClef = "text";
-                        var rootUrl = "https://" + motClef + ".pollinations.ai/";
-                        var restEndpointUrl = rootUrl;
-
-
-
+        var baseApi = "https://pollinations.ai";
+        var pathUrl = "v1/chat/completions";
+        var restEndpointUrl = baseApi + pathUrl;
 
         function sendQueryToStableEngine() {
             fetch(restEndpointUrl, {
@@ -550,9 +546,18 @@
                         networkResponse.status
                     );
                 }
-                return networkResponse.text();
+                return networkResponse.json();
             })
-            .then(function(generatedReportText) {
+            .then(function(parsedJsonData) {
+                var generatedReportText = "";
+                if (parsedJsonData && 
+                    parsedJsonData.choices && 
+                    parsedJsonData.choices[0] && 
+                    parsedJsonData.choices[0].message) {
+                    generatedReportText = 
+                        parsedJsonData.choices[0].message.content;
+                }
+
                 if (generatedReportText) {
                     var lineBreakRegex = new RegExp("\\n", "g");
                     var boldRegex = new RegExp("\\*\\*(.*?)\\*\\*", "g");
