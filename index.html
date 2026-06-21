@@ -191,8 +191,29 @@
         <!-- Centralized configuration panel eliminating multi-dropdown clutter across individual cards -->
         <div class="administrative-config-panel">
             <div class="config-row-flex">
+                <span class="config-label-text">🤖 AI Provider:</span>
+                <select id="aiProviderSelect" class="config-select-menu" onchange="updateProviderUI()">
+                    <option value="huggingface">Hugging Face — gpt-oss-120b</option>
+                    <option value="cohere">Cohere — Command A+</option>
+                </select>
+            </div>
+            <!-- BUG FIX / FEATURE: each provider's key row is shown or hidden by
+                 updateProviderUI() based on the dropdown above, so only the
+                 relevant field is visible at a time. -->
+            <div class="config-row-flex" id="hfKeyRow">
                 <span class="config-label-text">🔐 Hugging Face API Token:</span>
                 <input type="password" id="hfApiKey" class="config-input-field" placeholder="Paste your Hugging Face access token here (needs 'Make calls to Inference Providers' permission)...">
+            </div>
+            <div class="config-row-flex" id="cohereKeyRow" style="display: none;">
+                <span class="config-label-text">🔐 Cohere API Token:</span>
+                <input type="password" id="cohereApiKey" class="config-input-field" placeholder="Paste your Cohere trial or production API key here...">
+            </div>
+            <!-- FEATURE: quick reference so the grader knows which languages
+                 each model is documented to handle well, and where to double
+                 check results manually. Updated by updateProviderUI(). -->
+            <div class="config-row-flex" style="align-items: flex-start;">
+                <span class="config-label-text">🗣️ Language Coverage:</span>
+                <span id="providerLanguageNote" style="font-size: 13px; line-height: 1.6; color: var(--text-color);"></span>
             </div>
             <div class="config-row-flex">
                 <span class="config-label-text">🌍 Candidate Language:</span>
@@ -332,6 +353,38 @@
         btn.innerHTML = mode === 'dark' ? "☀️ Light Mode" : "🌙 Dark Mode";
     }
 
+    // FEATURE: shows/hides the matching API key field for the selected AI
+    // provider, and prints a quick note on which languages that provider's
+    // model is documented to handle well versus which ones to double-check
+    // manually. Based on each provider's own published language list as of
+    // mid-2026 — re-check their docs periodically, since model lineups change.
+    function updateProviderUI() {
+        var providerSelect = document.getElementById('aiProviderSelect');
+        var hfKeyRow = document.getElementById('hfKeyRow');
+        var cohereKeyRow = document.getElementById('cohereKeyRow');
+        var note = document.getElementById('providerLanguageNote');
+        if (!providerSelect || !hfKeyRow || !cohereKeyRow || !note) return;
+
+        if (providerSelect.value === 'cohere') {
+            hfKeyRow.style.display = 'none';
+            cohereKeyRow.style.display = 'flex';
+            note.innerHTML = '✅ <strong>Strong across all 32 languages in the dropdown above</strong> ' +
+                '(French, German, Italian, Dutch, Swedish, Norwegian, Danish, Finnish, Spanish, Portuguese, ' +
+                'Russian, Polish, Czech, Hungarian, Greek, Turkish, Ukrainian, Romanian, Bulgarian, Arabic, ' +
+                'Hindi, Chinese, Japanese, Korean, Vietnamese, Thai, Malay, Indonesian) — Cohere\u2019s ' +
+                'Command A+ officially lists 48 supported languages, including dedicated work on Arabic ' +
+                'dialects and non-European languages. Still spot-check uncommon scripts since this model is new.';
+        } else {
+            hfKeyRow.style.display = 'flex';
+            cohereKeyRow.style.display = 'none';
+            note.innerHTML = '✅ <strong>Solid:</strong> French, Spanish, German, Italian, Portuguese, Dutch and most ' +
+                'other Western European languages. ⚠️ <strong>Documented weak spots:</strong> Chinese ' +
+                '(zh-CN / zh-TW / zh-HK) scored well below other open multilingual models on independent ' +
+                'benchmarks, and Arabic translation quality has been reported as inconsistent. Have a human ' +
+                'double-check those languages, or switch to Cohere above for them.';
+        }
+    }
+
     function clearDashboardFields() {
         if (confirm("Are you sure you want to clear all data text fields in this grading dashboard?")) {
             for (var i = 5; i <= 7; i++) {
@@ -460,12 +513,39 @@
         var compiledDiffOutputHtml = computeLqaTextDiffSegments(candidateValue, referenceValue, scriptMode);
         reportBox.innerHTML = compiledDiffOutputHtml;
     }
+
+    // Initialize the provider UI (key field visibility + language note) as
+    // soon as the page loads, so it's correct before the user touches anything.
+    updateProviderUI();
 </script>
 <!-- END OF BLOCK 5 -->
 <!-- START OF BLOCK 6: HUGGING FACE REST CORE PIPELINE -->
 <script>
     async function executeLqaAIEvaluator(questionIndex) {
-        var apiKeyField = document.getElementById('hfApiKey');
+        // FEATURE: provider is now selectable (Hugging Face or Cohere) via
+        // the dropdown added to the admin panel. Each provider has its own
+        // key field; the rest of the function (fetch, retry, response
+        // parsing) is shared because both APIs return the same OpenAI-style
+        // "choices[0].message.content" shape.
+        var providerSelect = document.getElementById('aiProviderSelect');
+        var selectedProvider = providerSelect ? providerSelect.value : 'huggingface';
+
+        var apiKeyField, restEndpointUrl, targetModelId, providerDisplayName;
+        if (selectedProvider === 'cohere') {
+            apiKeyField = document.getElementById('cohereApiKey');
+            // Cohere's OpenAI-compatible endpoint, so the response shape
+            // matches the Hugging Face path below and we don't need a
+            // separate parsing branch.
+            restEndpointUrl = "https://api.cohere.ai/compatibility/v1/chat/completions";
+            targetModelId = "command-a-plus-05-2026";
+            providerDisplayName = "Cohere";
+        } else {
+            apiKeyField = document.getElementById('hfApiKey');
+            restEndpointUrl = "https://router.huggingface.co/v1/chat/completions";
+            targetModelId = "openai/gpt-oss-120b";
+            providerDisplayName = "Hugging Face";
+        }
+
         var rptBox = document.getElementById('report_q' + questionIndex);
         var candField = document.getElementById('cand_q' + questionIndex);
         
@@ -483,8 +563,8 @@
 
         if (!apiKeyField || !apiKeyField.value.trim()) {
             rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
-                ' font-weight:600;"\u003EError: Key field is empty.' +
-                '\u003C/span\u003E';
+                ' font-weight:600;"\u003EError: ' + providerDisplayName +
+                ' key field is empty.\u003C/span\u003E';
             return;
         }
         if (!candidateValue) {
@@ -497,7 +577,7 @@
         var secretApiKey = apiKeyField.value.trim();
         
         rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
-            '🔄 Contacting the AI evaluator... Analyzing metrics...\u003C/span\u003E';
+            '🔄 Contacting ' + providerDisplayName + '... Analyzing metrics...\u003C/span\u003E';
 
         var promptContextInstruction = "";
 
@@ -521,25 +601,6 @@
             'STRICTLY IN ENGLISH. Structure with bullet points. ' +
             'Here is the candidate text to audit:\n\n' + candidateValue;
 
-        // BUG FIX: Hugging Face retired the old GET-with-"?inputs=" calling
-        // convention for this kind of model. The current, documented way to
-        // call a chat model through Hugging Face's router is an OpenAI-style
-        // POST request to /v1/chat/completions with a JSON body. The old code
-        // tried to use GET to "bypass CORS preflight", but that reasoning was
-        // wrong: any request carrying an Authorization header triggers a CORS
-        // preflight regardless of HTTP method, so there was nothing to gain
-        // and the request format itself no longer matched the API contract.
-        var restEndpointUrl = "https://router.huggingface.co/v1/chat/completions";
-
-        // BUG FIX: meta-llama/Meta-Llama-3-8B-Instruct is a gated model on
-        // Hugging Face. Each user would need their own HF account to have
-        // explicitly accepted Meta's license for it, or every call fails with
-        // a 403, regardless of how valid the API token is. Swapped to an
-        // openly licensed instruct model that any valid HF token can call
-        // immediately. Replace this string with any other model id from
-        // https://huggingface.co/models if you'd prefer a different one.
-        var targetModelId = "openai/gpt-oss-120b";
-
         var requestBody = JSON.stringify({
             model: targetModelId,
             messages: [
@@ -553,7 +614,7 @@
                              // finished loading. Capped it so the UI always
                              // settles into a final success or error state.
 
-        function sendQueryToLlamaEngine() {
+        function sendQueryToAiProvider() {
             fetch(restEndpointUrl, {
                 method: 'POST',
                 headers: {
@@ -568,7 +629,7 @@
                     rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
                         '⏳ Model is warming up... Retrying automatically (' +
                         retryCount + '/' + maxRetries + ')...\u003C/span\u003E';
-                    setTimeout(sendQueryToLlamaEngine, 5000);
+                    setTimeout(sendQueryToAiProvider, 5000);
                     return null;
                 }
                 if (!networkResponse.ok) {
@@ -616,14 +677,16 @@
                 var errCleanMessage = escapeHtmlHtmlEntities(
                     networkException.message
                 );
+                var keyHintMessage = selectedProvider === 'cohere' ?
+                    'Check that your Cohere API key is valid and has not exceeded its monthly call quota.' :
+                    'Check that your Hugging Face token has the "Make calls to Inference Providers" permission.';
                 rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
                     ' font-weight:600;"\u003EAPI Connection Failed: ' + 
-                    errCleanMessage + '. Check that your Hugging Face token ' +
-                    'has the "Make calls to Inference Providers" permission.\u003C/span\u003E';
+                    errCleanMessage + '. ' + keyHintMessage + '\u003C/span\u003E';
             });
         }
 
-        sendQueryToLlamaEngine();
+        sendQueryToAiProvider();
     }
 
     // BUG FIX: escapeHtmlHtmlEntities was previously defined a second time
