@@ -522,16 +522,15 @@
         var requestPayloadStructure = {
             inputs: systemInstructionPrompt,
             parameters: {
-                max_new_tokens: 1024,
+                max_new_tokens: 512,
                 return_full_text: false
             }
         };
 
-        // High-performance European open-access endpoint via Hugging Face Meta router
+        // Fixed clean direct URL string format prevents compilation duplicates
         var restEndpointUrl = 'https://huggingface.co' +
-            'models/meta-llama/Meta-Llama-3-8B-Instruct';
+            'meta-llama/Meta-Llama-3-8B-Instruct';
 
-        // Isolated execution routine tracking hardware status payloads
         function sendQueryToHuggingFaceEngine() {
             fetch(restEndpointUrl, {
                 method: 'POST',
@@ -542,7 +541,6 @@
                 body: JSON.stringify(requestPayloadStructure)
             })
             .then(function(networkResponse) {
-                // Cold Start handler: intercept code 503 and wait for model compilation
                 if (networkResponse.status === 503) {
                     rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
                         '⏳ IA is waking up on Hugging Face servers... ' +
@@ -558,11 +556,10 @@
                 return networkResponse.json();
             })
             .then(function(parsedJsonData) {
-                if (!parsedJsonData) return; // Iteration loop handled by setTimeout
+                if (!parsedJsonData) return;
                 
-                // Extract clean token output array from Hugging Face standard schema structure
                 var generatedReportText = "";
-                if (Array.isArray(parsedJsonData) && parsedJsonData[0]) {
+                if (Array.isArray(parsedJsonData) && parsedJsonData.length > 0) {
                     generatedReportText = parsedJsonData[0].generated_text || "";
                 } else if (parsedJsonData.generated_text) {
                     generatedReportText = parsedJsonData.generated_text;
