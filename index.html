@@ -528,7 +528,9 @@
         };
 
         // Protected single-string endpoint prevents multi-line compiler cut-off bugs
-        var restEndpointUrl = "https://huggingface.co";
+                var baseApi = "https://api-inference.huggingface.co/";
+                var pathMdl = "models/meta-llama/Meta-Llama-3-8B-Instruct";
+                var restEndpointUrl = baseApi + pathMdl;
 
         function sendQueryToHuggingFaceEngine() {
             fetch(restEndpointUrl, {
