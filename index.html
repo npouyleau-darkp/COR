@@ -588,9 +588,13 @@
         "Assess whether the candidate can communicate both simple and complex thoughts clearly, accurately, and professionally.";
 }        else if (questionIndex === 10) {
     promptContextInstruction =
-        "The candidate is writing their essay in " + selectedLangName +
-        " (" + selectedLangCode + "). Thoroughly audit their text for spelling mistakes, grammatical conformity, fluency, and regional style issues. " +
-        "Only report issues that are likely genuine language problems. Avoid speculative corrections and avoid treating acceptable language variations as errors.";
+    "The candidate is writing their essay in " + selectedLangName +
+    " (" + selectedLangCode + "). " +
+    "The candidate is expected to demonstrate native-level written proficiency in this language. " +
+    "Evaluate the text against the standards of an educated native speaker. " +
+    "Thoroughly audit their text for spelling mistakes, grammatical conformity, fluency, and regional style issues. " +
+    "Only report issues that are likely genuine language problems. " +
+    "Avoid speculative corrections and avoid treating acceptable language variations as errors.";
 }
 
         var systemInstructionPrompt =
