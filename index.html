@@ -99,6 +99,10 @@
         }
         .config-input-field:focus, .config-select-menu:focus { border-color: #2563eb; outline: none; }
     </style>
+<!-- BUG FIX: this file previously had two <head> blocks and two <body> tags
+     (one opened here, one opened again at the start of Block 2 below).
+     That is invalid HTML. Browsers were silently "fixing" it for you,
+     but it is safer to have exactly one <head> and one <body>. -->
 </head>
 <body>
     <noscript>
@@ -160,8 +164,6 @@
         #qaResetBtn { background-color: #dc2626; color: white; padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; transition: background 0.2s; }
         #qaResetBtn:hover { background-color: #b91c1c; }
     </style>
-</head>
-<body>
 <!-- END OF BLOCK 2 -->
 <!-- START OF BLOCK 3: SECTION B GRADING INTERFACE (QUESTIONS 5 TO 7 HTML) -->
 <div id="mainApplicationWrapper">
@@ -189,8 +191,8 @@
         <!-- Centralized configuration panel eliminating multi-dropdown clutter across individual cards -->
         <div class="administrative-config-panel">
             <div class="config-row-flex">
-                <span class="config-label-text">🔐 Vertex AI API Key:</span>
-                <input type="password" id="geminiApiKey" class="config-input-field" placeholder="Paste your Google Cloud Vertex AI authorized API key here...">
+                <span class="config-label-text">🔐 Hugging Face API Token:</span>
+                <input type="password" id="hfApiKey" class="config-input-field" placeholder="Paste your Hugging Face access token here (needs 'Make calls to Inference Providers' permission)...">
             </div>
             <div class="config-row-flex">
                 <span class="config-label-text">🌍 Candidate Language:</span>
@@ -289,7 +291,7 @@
                     <span class="card-header-label">Question 8 (Recent Game Essay - Fixed English Input) - Automated AI Audit Node</span>
                     <textarea id="cand_q8" rows="4" placeholder="Paste candidate long-form essay response here..."></textarea>
                     <div class="action-trigger-row">
-                        <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(8)">Analyze Text with Gemini</button>
+                        <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(8)">Analyze Text with AI</button>
                     </div>
                     <div id="report_q8" class="report-display-box" dir="auto" style="unicode-bidi: plaintext;">[Automated AI grading report empty]</div>
                 </div>
@@ -299,7 +301,7 @@
                     <span class="card-header-label">Question 9 (Nicolas & Kindness Opinion - Fixed English Input) - Automated AI Audit Node</span>
                     <textarea id="cand_q9" rows="4" placeholder="Paste candidate long-form essay response here..."></textarea>
                     <div class="action-trigger-row">
-                        <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(9)">Analyze Text with Gemini</button>
+                        <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(9)">Analyze Text with AI</button>
                     </div>
                     <div id="report_q9" class="report-display-box" dir="auto" style="unicode-bidi: plaintext;">[Automated AI grading report empty]</div>
                 </div>
@@ -309,7 +311,7 @@
                     <span class="card-header-label">Question 10 (Proverb / Yoda Analysis - Multi-Language) - Automated AI Audit Node</span>
                     <textarea id="cand_q10" rows="4" placeholder="Paste candidate long-form essay response here..."></textarea>
                     <div class="action-trigger-row">
-                        <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(10)">Analyze Text with Gemini</button>
+                        <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(10)">Analyze Text with AI</button>
                     </div>
                     <div id="report_q10" class="report-display-box" dir="auto" style="unicode-bidi: plaintext;">[Automated AI grading report empty]</div>
                 </div>
@@ -463,7 +465,7 @@
 <!-- START OF BLOCK 6: HUGGING FACE REST CORE PIPELINE -->
 <script>
     async function executeLqaAIEvaluator(questionIndex) {
-        var apiKeyField = document.getElementById('geminiApiKey');
+        var apiKeyField = document.getElementById('hfApiKey');
         var rptBox = document.getElementById('report_q' + questionIndex);
         var candField = document.getElementById('cand_q' + questionIndex);
         
@@ -495,7 +497,7 @@
         var secretApiKey = apiKeyField.value.trim();
         
         rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
-            '🔄 Opening direct Llama 3 route... Analyzing metrics...\u003C/span\u003E';
+            '🔄 Contacting the AI evaluator... Analyzing metrics...\u003C/span\u003E';
 
         var promptContextInstruction = "";
 
@@ -519,26 +521,53 @@
             'STRICTLY IN ENGLISH. Structure with bullet points. ' +
             'Here is the candidate text to audit:\n\n' + candidateValue;
 
-        // Isolate URL chunks to avoid compilation cut-off bugs
-        var baseApi = "https://router.huggingface.co/hf-inference/";
-        var tgtMdl = "models/meta-llama/Meta-Llama-3-8B-Instruct";
-        
-        // Convert parameters to a simple query string to bypass CORS preflight
-        var prmEncode = encodeURIComponent(systemInstructionPrompt);
-        var restEndpointUrl = baseApi + tgtMdl + "?inputs=" + prmEncode;
+        // BUG FIX: Hugging Face retired the old GET-with-"?inputs=" calling
+        // convention for this kind of model. The current, documented way to
+        // call a chat model through Hugging Face's router is an OpenAI-style
+        // POST request to /v1/chat/completions with a JSON body. The old code
+        // tried to use GET to "bypass CORS preflight", but that reasoning was
+        // wrong: any request carrying an Authorization header triggers a CORS
+        // preflight regardless of HTTP method, so there was nothing to gain
+        // and the request format itself no longer matched the API contract.
+        var restEndpointUrl = "https://router.huggingface.co/v1/chat/completions";
+
+        // BUG FIX: meta-llama/Meta-Llama-3-8B-Instruct is a gated model on
+        // Hugging Face. Each user would need their own HF account to have
+        // explicitly accepted Meta's license for it, or every call fails with
+        // a 403, regardless of how valid the API token is. Swapped to an
+        // openly licensed instruct model that any valid HF token can call
+        // immediately. Replace this string with any other model id from
+        // https://huggingface.co/models if you'd prefer a different one.
+        var targetModelId = "openai/gpt-oss-120b";
+
+        var requestBody = JSON.stringify({
+            model: targetModelId,
+            messages: [
+                { role: "user", content: systemInstructionPrompt }
+            ]
+        });
+
+        var retryCount = 0;
+        var maxRetries = 4; // BUG FIX: the old retry loop on HTTP 503 had no
+                             // limit and could poll forever if the model never
+                             // finished loading. Capped it so the UI always
+                             // settles into a final success or error state.
 
         function sendQueryToLlamaEngine() {
             fetch(restEndpointUrl, {
-                method: 'GET',
+                method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + secretApiKey
-                }
+                    'Authorization': 'Bearer ' + secretApiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: requestBody
             })
             .then(function(networkResponse) {
-                if (networkResponse.status === 503) {
+                if (networkResponse.status === 503 && retryCount < maxRetries) {
+                    retryCount++;
                     rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
-                        '⏳ Meta Llama 3 is loading on European nodes... ' +
-                        'Retrying automatically in 5 seconds...\u003C/span\u003E';
+                        '⏳ Model is warming up... Retrying automatically (' +
+                        retryCount + '/' + maxRetries + ')...\u003C/span\u003E';
                     setTimeout(sendQueryToLlamaEngine, 5000);
                     return null;
                 }
@@ -551,12 +580,16 @@
             })
             .then(function(parsedJsonData) {
                 if (!parsedJsonData) return;
-                
+
+                // BUG FIX: the old code read parsedJsonData[0].generated_text,
+                // which matched the legacy text-generation pipeline response
+                // shape. The chat-completions endpoint returns an OpenAI-style
+                // payload, so the message text lives at
+                // choices[0].message.content instead.
                 var generatedReportText = "";
-                if (Array.isArray(parsedJsonData) && parsedJsonData.length > 0) {
-                    generatedReportText = parsedJsonData[0].generated_text || "";
-                } else if (parsedJsonData.generated_text) {
-                    generatedReportText = parsedJsonData.generated_text;
+                if (parsedJsonData.choices && parsedJsonData.choices.length > 0 &&
+                    parsedJsonData.choices[0].message) {
+                    generatedReportText = parsedJsonData.choices[0].message.content || "";
                 }
 
                 if (generatedReportText) {
@@ -564,7 +597,7 @@
                     var boldRegex = new RegExp("\\*\\*(.*?)\\*\\*", "g");
                     var italicRegex = new RegExp("\\*(.*?)\\*", "g");
 
-                    var cleanHtmlReport = generatedReportText
+                    var cleanHtmlReport = escapeHtmlHtmlEntities(generatedReportText)
                         .replace(lineBreakRegex, '\u003Cbr\u003E')
                         .replace(boldRegex, '\u003Cstrong\u003E$1\u003C/strong\u003E')
                         .replace(italicRegex, '\u003Cem\u003E$1\u003C/em\u003E');
@@ -573,7 +606,7 @@
                 } else {
                     rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
                         ' font-weight:600;"\u003EError: Received empty response' +
-                        ' object from Llama cluster.\u003C/span\u003E';
+                        ' object from the AI model.\u003C/span\u003E';
                 }
             })
             .catch(function(networkException) {
@@ -585,22 +618,19 @@
                 );
                 rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
                     ' font-weight:600;"\u003EAPI Connection Failed: ' + 
-                    errCleanMessage + '. Check your Write Token profile.\u003C/span\u003E';
+                    errCleanMessage + '. Check that your Hugging Face token ' +
+                    'has the "Make calls to Inference Providers" permission.\u003C/span\u003E';
             });
         }
 
         sendQueryToLlamaEngine();
     }
 
-    function escapeHtmlHtmlEntities(rawStringText) {
-        var cleanString = rawStringText || "";
-        cleanString = cleanString.replace(new RegExp("&", "g"), "&amp;");
-        cleanString = cleanString.replace(new RegExp("\u003C", "g"), "&lt;");
-        cleanString = cleanString.replace(new RegExp("\u003E", "g"), "&gt;");
-        cleanString = cleanString.replace(new RegExp('"', "g"), "&quot;");
-        cleanString = cleanString.replace(new RegExp("'", "g"), "'");
-        return cleanString;
-    }
+    // BUG FIX: escapeHtmlHtmlEntities was previously defined a second time
+    // here, overwriting the working version from Block 5 with one where the
+    // apostrophe replacement did nothing (it replaced ' with '). The single
+    // correct definition in Block 5 is reused here since both scripts share
+    // the same global scope.
 </script>
 </body>
 </html>
