@@ -4,9 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LQA Review & Grading Dashboard (Europe/Vertex AI Edition)</title>
+    <title>LQA Review & Grading Dashboard (Hugging Face Edition)</title>
     
-    <!-- Unified administrative stylesheet optimizing evaluators interface properties -->
     <style>
         :root {
             --container-bg: #ffffff;
@@ -84,7 +83,6 @@
         
         @media (max-width: 1750px) { .temporary-todo-float { display: none !important; } }
 
-        /* Unified configuration console framework for secure administrative inputs */
         .administrative-config-panel {
             background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px;
             padding: 20px; margin-bottom: 30px; display: flex; flex-direction: column; gap: 15px;
@@ -462,14 +460,14 @@
     }
 </script>
 <!-- END OF BLOCK 5 -->
-<!-- START OF BLOCK 6: MISTRAL AI REST CORE PIPELINE & SYSTEM PROMPT AUDITOR -->
+<!-- START OF BLOCK 6: HUGGING FACE REST CORE PIPELINE -->
 <script>
     async function executeLqaAIEvaluator(questionIndex) {
         var apiKeyField = document.getElementById('geminiApiKey');
-        var reportBox = document.getElementById('report_q' + questionIndex);
+        var rptBox = document.getElementById('report_q' + questionIndex);
         var candField = document.getElementById('cand_q' + questionIndex);
         
-        if (!reportBox || !candField) return;
+        if (!rptBox || !candField) return;
         var candidateValue = candField.value.trim();
         
         var globalLangMenu = document.getElementById(
@@ -482,13 +480,13 @@
             "Unknown Language";
 
         if (!apiKeyField || !apiKeyField.value.trim()) {
-            reportBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
+            rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
                 ' font-weight:600;"\u003EError: Key field is empty.' +
                 '\u003C/span\u003E';
             return;
         }
         if (!candidateValue) {
-            reportBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
+            rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
                 ' font-weight:600;"\u003EError: Text input is empty.' +
                 '\u003C/span\u003E';
             return;
@@ -496,8 +494,8 @@
 
         var secretApiKey = apiKeyField.value.trim();
         
-        reportBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
-            '🔄 Encapsulating secure request... Analyzing text...\u003C/span\u003E';
+        rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
+            '🔄 Opening direct European pipeline... Analyzing metrics...\u003C/span\u003E';
 
         var promptContextInstruction = "";
 
@@ -518,30 +516,24 @@
             questionIndex + '. ' + promptContextInstruction + ' Evaluate ' +
             'the text across pillars: Spelling, Grammar, Fluency, Style. ' +
             'CRITICAL REQUIREMENT: You MUST write your entire analysis ' +
-            'STRICTLY IN ENGLISH. Here is the candidate text to audit:\n\n' +
-            candidateValue;
+            'STRICTLY IN ENGLISH. Structure with bullet points. ' +
+            'Here is the candidate text to audit:\n\n' + candidateValue;
 
         var requestPayloadStructure = {
-            model: 'mistral-large-latest',
-            messages: [
-                {
-                    role: 'user',
-                    content: systemInstructionPrompt
-                }
-            ]
+            inputs: systemInstructionPrompt,
+            parameters: {
+                max_new_tokens: 1024,
+                return_full_text: false
+            }
         };
 
-        var targetMistralUrl = 'https://mistral.ai';
-        var secureBypassUrl = 'https://allorigins.win' + 
-            encodeURIComponent(targetMistralUrl);
+        // High-performance European open-access endpoint via Hugging Face Meta router
+        var restEndpointUrl = 'https://huggingface.co' +
+            'models/meta-llama/Meta-Llama-3-8B-Instruct';
 
-        fetch(secureBypassUrl, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
+        // Isolated execution routine tracking hardware status payloads
+        function sendQueryToHuggingFaceEngine() {
+            fetch(restEndpointUrl, {
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer ' + secretApiKey,
@@ -549,58 +541,64 @@
                 },
                 body: JSON.stringify(requestPayloadStructure)
             })
-        })
-        .then(function(networkResponse) {
-            if (!networkResponse.ok) {
-                throw new Error('HTTP error intercepted. Status code: ' + 
-                    networkResponse.status
-                );
-            }
-            return networkResponse.json();
-        })
-        .then(function(wrappedData) {
-            var parsedJsonData = JSON.parse(wrappedData.contents);
-            
-            if (parsedJsonData && 
-                parsedJsonData.choices && 
-                parsedJsonData.choices[0] && 
-                parsedJsonData.choices[0].message && 
-                parsedJsonData.choices[0].message.content) {
+            .then(function(networkResponse) {
+                // Cold Start handler: intercept code 503 and wait for model compilation
+                if (networkResponse.status === 503) {
+                    rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
+                        '⏳ IA is waking up on Hugging Face servers... ' +
+                        'Retrying automatically in 5 seconds...\u003C/span\u003E';
+                    setTimeout(sendQueryToHuggingFaceEngine, 5000);
+                    return null;
+                }
+                if (!networkResponse.ok) {
+                    throw new Error('Network error. Status code: ' + 
+                        networkResponse.status
+                    );
+                }
+                return networkResponse.json();
+            })
+            .then(function(parsedJsonData) {
+                if (!parsedJsonData) return; // Iteration loop handled by setTimeout
                 
-                var generatedReportText = 
-                    parsedJsonData.choices[0].message.content;
-                
-                var lineBreakRegex = new RegExp("\\n", "g");
-                var boldRegex = new RegExp("\\*\\*(.*?)\\*\\*", "g");
-                var italicRegex = new RegExp("\\*(.*?)\\*", "g");
+                // Extract clean token output array from Hugging Face standard schema structure
+                var generatedReportText = "";
+                if (Array.isArray(parsedJsonData) && parsedJsonData[0]) {
+                    generatedReportText = parsedJsonData[0].generated_text || "";
+                } else if (parsedJsonData.generated_text) {
+                    generatedReportText = parsedJsonData.generated_text;
+                }
 
-                var cleanHtmlReport = generatedReportText
-                    .replace(lineBreakRegex, '\u003Cbr\u003E')
-                    .replace(boldRegex, '\u003Cstrong\u003E$1\u003C/strong\u003E')
-                    .replace(italicRegex, '\u003Cem\u003E$1\u003C/em\u003E');
-                    
-                reportBox.innerHTML = cleanHtmlReport;
-            } else if (parsedJsonData && parsedJsonData.error) {
-                throw new Error(parsedJsonData.error.message || 
-                    'Mistral engine authentication exception.'
+                if (generatedReportText) {
+                    var lineBreakRegex = new RegExp("\\n", "g");
+                    var boldRegex = new RegExp("\\*\\*(.*?)\\*\\*", "g");
+                    var italicRegex = new RegExp("\\*(.*?)\\*", "g");
+
+                    var cleanHtmlReport = generatedReportText
+                        .replace(lineBreakRegex, '\u003Cbr\u003E')
+                        .replace(boldRegex, '\u003Cstrong\u003E$1\u003C/strong\u003E')
+                        .replace(italicRegex, '\u003Cem\u003E$1\u003C/em\u003E');
+                        
+                    rptBox.innerHTML = cleanHtmlReport;
+                } else {
+                    rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
+                        ' font-weight:600;"\u003EError: Received empty response' +
+                        ' object from Hugging Face nodes.\u003C/span\u003E';
+                }
+            })
+            .catch(function(networkException) {
+                console.error('LQA engine routing failure handled:', 
+                    networkException
                 );
-            } else {
-                reportBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
-                    ' font-weight:600;"\u003EError: Received an unparseable' +
-                    ' structural payload mapping object.\u003C/span\u003E';
-            }
-        })
-        .catch(function(networkException) {
-            console.error('LQA engine routing failure handled gracefully:', 
-                networkException
-            );
-            var errCleanMessage = escapeHtmlHtmlEntities(
-                networkException.message
-            );
-            reportBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
-                ' font-weight:600;"\u003EAPI Connection Failed: ' + 
-                errCleanMessage + '. Verify your key parameters.\u003C/span\u003E';
-        });
+                var errCleanMessage = escapeHtmlHtmlEntities(
+                    networkException.message
+                );
+                rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
+                    ' font-weight:600;"\u003EAPI Connection Failed: ' + 
+                    errCleanMessage + '. Verify your token validity.\u003C/span\u003E';
+            });
+        }
+
+        sendQueryToHuggingFaceEngine();
     }
 
     function escapeHtmlHtmlEntities(rawStringText) {
