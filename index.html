@@ -517,28 +517,14 @@
             'STRICTLY IN ENGLISH. Structure with bullet points. ' +
             'Here is the candidate text to audit:\n\n' + candidateValue;
 
-        var requestPayloadStructure = {
-            messages: [
-                {
-                    role: 'system',
-                    content: systemInstructionPrompt
-                }
-            ],
-            model: 'qwen',
-            jsonMode: false
-        };
-
-        var partieA = "https://gen.polli" + "nations.ai/";
-        var partieB = "v1/chat/com" + "pletions";
-        var restEndpointUrl = partieA + partieB;
+        // Universal open-access text route bypasses preflight validations
+        var prmEncode = encodeURIComponent(systemInstructionPrompt);
+        var baseApi = "https://pollinations.ai";
+        var restEndpointUrl = baseApi + prmEncode;
 
         function sendQueryToStableEngine() {
             fetch(restEndpointUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestPayloadStructure)
+                method: 'GET'
             })
             .then(function(networkResponse) {
                 if (!networkResponse.ok) {
@@ -546,18 +532,9 @@
                         networkResponse.status
                     );
                 }
-                return networkResponse.json();
+                return networkResponse.text();
             })
-            .then(function(parsedJsonData) {
-                var generatedReportText = "";
-                if (parsedJsonData && 
-                    parsedJsonData.choices && 
-                    parsedJsonData.choices[0] && 
-                    parsedJsonData.choices[0].message) {
-                    generatedReportText = 
-                        parsedJsonData.choices[0].message.content;
-                }
-
+            .then(function(generatedReportText) {
                 if (generatedReportText) {
                     var lineBreakRegex = new RegExp("\\n", "g");
                     var boldRegex = new RegExp("\\*\\*(.*?)\\*\\*", "g");
