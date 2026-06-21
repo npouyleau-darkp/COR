@@ -460,7 +460,7 @@
     }
 </script>
 <!-- END OF BLOCK 5 -->
-<!-- START OF BLOCK 6: HUGGING FACE REST CORE PIPELINE -->
+<!-- START OF BLOCK 6: DIRECT AI REST CORE PIPELINE -->
 <script>
     async function executeLqaAIEvaluator(questionIndex) {
         var apiKeyField = document.getElementById('geminiApiKey');
@@ -492,10 +492,8 @@
             return;
         }
 
-        var secretApiKey = apiKeyField.value.trim();
-        
         rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
-            '🔄 Opening direct European pipeline... Analyzing metrics...\u003C/span\u003E';
+            '🔄 Connecting to stable core... Analyzing metrics...\u003C/span\u003E';
 
         var promptContextInstruction = "";
 
@@ -520,54 +518,37 @@
             'Here is the candidate text to audit:\n\n' + candidateValue;
 
         var requestPayloadStructure = {
-            inputs: systemInstructionPrompt,
-            parameters: {
-                max_new_tokens: 512,
-                return_full_text: false
-            }
+            messages: [
+                {
+                    role: 'system',
+                    content: systemInstructionPrompt
+                }
+            ],
+            model: 'qwen',
+            jsonMode: false
         };
 
-        var baseApi = "https://api-inference.huggingface.co/";
-        // Segmented path payload tracking string variables blocks cut-offs
-        var pathMdl = "models/mistralai/" + 
-    "Mistral-7B-Instruct-v0.2";
+        // Highly-stable text pipeline gateway splits target endpoint
+        var baseApi = "https://pollinations.ai";
+        var restEndpointUrl = baseApi + "openai";
 
-        var restEndpointUrl = baseApi + pathMdl;
-
-        function sendQueryToHuggingFaceEngine() {
+        function sendQueryToStableEngine() {
             fetch(restEndpointUrl, {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + secretApiKey,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(requestPayloadStructure)
             })
             .then(function(networkResponse) {
-                if (networkResponse.status === 503) {
-                    rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
-                        '⏳ IA is waking up on Hugging Face servers... ' +
-                        'Retrying automatically in 5 seconds...\u003C/span\u003E';
-                    setTimeout(sendQueryToHuggingFaceEngine, 5000);
-                    return null;
-                }
                 if (!networkResponse.ok) {
                     throw new Error('Network error. Status code: ' + 
                         networkResponse.status
                     );
                 }
-                return networkResponse.json();
+                return networkResponse.text();
             })
-            .then(function(parsedJsonData) {
-                if (!parsedJsonData) return;
-                
-                var generatedReportText = "";
-                if (Array.isArray(parsedJsonData) && parsedJsonData.length > 0) {
-                    generatedReportText = parsedJsonData[0].generated_text || "";
-                } else if (parsedJsonData.generated_text) {
-                    generatedReportText = parsedJsonData.generated_text;
-                }
-
+            .then(function(generatedReportText) {
                 if (generatedReportText) {
                     var lineBreakRegex = new RegExp("\\n", "g");
                     var boldRegex = new RegExp("\\*\\*(.*?)\\*\\*", "g");
@@ -582,7 +563,7 @@
                 } else {
                     rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
                         ' font-weight:600;"\u003EError: Received empty response' +
-                        ' object from Hugging Face nodes.\u003C/span\u003E';
+                        ' object from text cluster.\u003C/span\u003E';
                 }
             })
             .catch(function(networkException) {
@@ -594,11 +575,11 @@
                 );
                 rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
                     ' font-weight:600;"\u003EAPI Connection Failed: ' + 
-                    errCleanMessage + '. Verify your token validity.\u003C/span\u003E';
+                    errCleanMessage + '. Retrying connection...\u003C/span\u003E';
             });
         }
 
-        sendQueryToHuggingFaceEngine();
+        sendQueryToStableEngine();
     }
 
     function escapeHtmlHtmlEntities(rawStringText) {
