@@ -163,6 +163,46 @@
         
         #qaResetBtn { background-color: #dc2626; color: white; padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; transition: background 0.2s; }
         #qaResetBtn:hover { background-color: #b91c1c; }
+
+        /* FEATURE: language-lock warning shown until a real candidate
+           language is selected. Disabled action buttons get a visual cue
+           too, beyond the native disabled state, so it reads clearly. */
+        .lang-lock-warning {
+            color: #b45309; background: #fef3c7; border: 1px solid #f59e0b;
+            border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600;
+        }
+        .btn-action:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .btn-analyze-all { background-color: #0f766e; color: white; }
+        .btn-analyze-all:hover { background-color: #115e59; }
+
+        /* FEATURE: structured report rendering (severity / confidence tags,
+           per-pillar sections, regional-consistency callout, "Not an error"
+           buttons feeding the living exceptions dictionary). */
+        .pillar-block { margin-bottom: 16px; }
+        .pillar-block h4 { margin: 0 0 8px 0; font-size: 14px; color: var(--title-color); }
+        .issue-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; padding: 8px; border-radius: 6px; background-color: var(--input-bg); }
+        .issue-text { flex: 1; }
+        .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-right: 4px; white-space: nowrap; }
+        .badge-critical { background: #7f1d1d; color: #fff; }
+        .badge-major { background: #dc2626; color: #fff; }
+        .badge-minor { background: #f59e0b; color: #1e293b; }
+        .badge-neutral { background: #94a3b8; color: #1e293b; }
+        .badge-conf-high { background: #15803d; color: #fff; }
+        .badge-conf-medium { background: #ca8a04; color: #fff; }
+        .badge-conf-low { background: #64748b; color: #fff; }
+        .not-an-error-btn {
+            font-size: 11px; padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border-color);
+            background-color: var(--container-bg); color: var(--text-color); cursor: pointer; white-space: nowrap;
+        }
+        .not-an-error-btn:hover { background-color: #e2e8f0; }
+        .regional-consistency-box {
+            margin-top: 10px; padding: 10px 14px; border-radius: 6px;
+            background-color: #eef2ff; border: 1px solid #6366f1; font-size: 13.5px;
+        }
+        .report-meta-note { font-size: 12px; color: #64748b; margin-top: 10px; font-style: italic; }
+        .exceptions-tracker { font-size: 12.5px; color: var(--text-color); }
+        .exceptions-tracker button { font-size: 11px; padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border-color); background: var(--container-bg); color: var(--text-color); cursor: pointer; margin-left: 8px; }
     </style>
 <!-- END OF BLOCK 2 -->
 <!-- START OF BLOCK 3: SECTION B GRADING INTERFACE (QUESTIONS 5 TO 7 HTML) -->
@@ -173,10 +213,11 @@
         <div class="temporary-todo-float">
             <div class="todo-title">🚧 TO DO 🚧</div>
             <ul class="todo-list">
-                <li>Configure Secure AI Webhook Routing Layer (No API keys in client code)</li>
-                <li>Implement Character-by-Character Diff Engine for CJK scripts</li>
-                <li>Build dynamic multi-language text rendering containers with bidirectional layout safety</li>
-                <li>Connect Plagiarism detection endpoint parameters</li>
+                <li>[ON HOLD] Secure server-side proxy so API keys never sit in client code</li>
+                <li>[ON HOLD] Session quota/usage counter per provider</li>
+                <li>Diff engine: replace word/char LCS with Myers algorithm for long texts (paragraph-level fallback added as a stopgap for now)</li>
+                <li>Grow the cultural-nuance example library from real flagged cases over time</li>
+                <li>Per-question report export (copy/PDF)</li>
             </ul>
         </div>
 
@@ -217,7 +258,8 @@
             </div>
             <div class="config-row-flex">
                 <span class="config-label-text">🌍 Candidate Language:</span>
-                <select id="globalCandidateLanguage" class="config-select-menu">
+                <select id="globalCandidateLanguage" class="config-select-menu" onchange="updateLanguageLockState()">
+                    <option value="" disabled selected>— Select Candidate Language —</option>
                     <!-- Western & Northern Europe -->
                     <option value="fr-FR">French (FR)</option>
                     <option value="de-DE">German (DE)</option>
@@ -256,6 +298,24 @@
                     <option value="ms-MY">Malay (MY)</option>
                     <option value="id-ID">Indonesian (ID)</option>
                 </select>
+            </div>
+            <!-- FEATURE: tool is locked until a real language is chosen, since
+                 both the diff engine (CJK script mode) and the AI evaluator
+                 (Q10 prompt) depend on it. Hidden once a language is set. -->
+            <div class="config-row-flex" id="langLockWarningRow">
+                <span class="config-label-text"></span>
+                <span class="lang-lock-warning" id="langLockWarning">⚠️ Please select the candidate's language to begin</span>
+            </div>
+            <div class="config-row-flex">
+                <span class="config-label-text">🔁 Self-Review Pass:</span>
+                <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; color: var(--text-color);">
+                    <input type="checkbox" id="selfReviewToggle">
+                    Run a second AI pass that re-checks and prunes low-confidence findings (uses 2x quota per analysis)
+                </label>
+            </div>
+            <div class="config-row-flex">
+                <span class="config-label-text">📚 Exceptions Dictionary:</span>
+                <span class="exceptions-tracker" id="exceptionsTracker">No exceptions saved yet for this language.</span>
             </div>
         </div>
 
@@ -305,12 +365,19 @@
 <!-- END OF BLOCK 3 -->
 <!-- START OF BLOCK 4: SECTION C GRADING INTERFACE (QUESTIONS 8 TO 10 HTML) -->
                 <!-- ==================== SECTION C: WRITING SKILL EVALUATION ==================== -->
-                <div class="section-title">Section C: Writing Skill / Essay Analysis</div>
+                <div class="section-title" style="display:flex; align-items:center; justify-content:space-between; gap:15px;">
+                    <span>Section C: Writing Skill / Essay Analysis</span>
+                    <button type="button" class="btn-action btn-analyze-all" onclick="executeLqaAnalyzeAll()" style="margin-bottom: 2px;">Analyze All (8, 9 &amp; 10)</button>
+                </div>
                 
                 <!-- QUESTION 8 BLOCK -->
                 <div class="grading-card">
                     <span class="card-header-label">Question 8 (Recent Game Essay - Fixed English Input) - Automated AI Audit Node</span>
                     <textarea id="cand_q8" rows="4" placeholder="Paste candidate long-form essay response here..."></textarea>
+                    <!-- FEATURE: kept structurally separate from the candidate text, so
+                         it is never sent to the AI model and can never be misread as
+                         part of the essay (fix for "mixes essay with recruiter notes"). -->
+                    <textarea id="notes_q8" rows="2" placeholder="Recruiter notes (optional — excluded from AI analysis)..." style="margin-top: 8px; font-size: 13px;"></textarea>
                     <div class="action-trigger-row">
                         <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(8)">Analyze Text with AI</button>
                     </div>
@@ -321,6 +388,7 @@
                 <div class="grading-card">
                     <span class="card-header-label">Question 9 (Nicolas & Kindness Opinion - Fixed English Input) - Automated AI Audit Node</span>
                     <textarea id="cand_q9" rows="4" placeholder="Paste candidate long-form essay response here..."></textarea>
+                    <textarea id="notes_q9" rows="2" placeholder="Recruiter notes (optional — excluded from AI analysis)..." style="margin-top: 8px; font-size: 13px;"></textarea>
                     <div class="action-trigger-row">
                         <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(9)">Analyze Text with AI</button>
                     </div>
@@ -331,6 +399,7 @@
                 <div class="grading-card">
                     <span class="card-header-label">Question 10 (Proverb / Yoda Analysis - Multi-Language) - Automated AI Audit Node</span>
                     <textarea id="cand_q10" rows="4" placeholder="Paste candidate long-form essay response here..."></textarea>
+                    <textarea id="notes_q10" rows="2" placeholder="Recruiter notes (optional — excluded from AI analysis)..." style="margin-top: 8px; font-size: 13px;"></textarea>
                     <div class="action-trigger-row">
                         <button type="button" class="btn-action btn-ai" onclick="executeLqaAIEvaluator(10)">Analyze Text with AI</button>
                     </div>
@@ -385,6 +454,94 @@
         }
     }
 
+    // FEATURE (B): the diff engine's CJK script-mode AND the AI evaluator's
+    // Q10 prompt both depend on the selected candidate language, so every
+    // action button stays disabled until a real language is chosen. Also
+    // refreshes the exceptions-dictionary counter for the newly selected language.
+    function updateLanguageLockState() {
+        var langMenu = document.getElementById('globalCandidateLanguage');
+        var warningRow = document.getElementById('langLockWarningRow');
+        var actionButtons = document.querySelectorAll('.btn-diff, .btn-ai, .btn-analyze-all');
+        var hasLanguage = !!(langMenu && langMenu.value);
+
+        actionButtons.forEach(function(btn) { btn.disabled = !hasLanguage; });
+        if (warningRow) warningRow.style.display = hasLanguage ? 'none' : 'flex';
+
+        refreshExceptionsTracker();
+    }
+
+    // FEATURE: living exceptions dictionary. Stored per language key in
+    // localStorage (this is a real downloaded file opened in your own
+    // browser, not a Claude.ai artifact, so localStorage persists normally
+    // across sessions on this machine). Re-injected into future prompts for
+    // that language so the same accepted term/expression is never re-flagged.
+    function getExceptionsLangKey(questionIndex) {
+        if (questionIndex === 8 || questionIndex === 9) return 'en-US';
+        var langMenu = document.getElementById('globalCandidateLanguage');
+        return (langMenu && langMenu.value) ? langMenu.value : 'en-US';
+    }
+
+    function getExceptionsForLanguage(langKey) {
+        try {
+            var raw = window.localStorage.getItem('lqaExceptions_' + langKey);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function addExceptionForLanguage(langKey, exceptionText) {
+        var current = getExceptionsForLanguage(langKey);
+        var trimmed = (exceptionText || "").trim();
+        if (!trimmed || current.indexOf(trimmed) !== -1) return;
+        current.push(trimmed);
+        try {
+            window.localStorage.setItem('lqaExceptions_' + langKey, JSON.stringify(current));
+        } catch (e) {
+            console.error('Could not persist exception to localStorage:', e);
+        }
+        refreshExceptionsTracker();
+    }
+
+    function clearExceptionsForLanguage(langKey) {
+        try {
+            window.localStorage.removeItem('lqaExceptions_' + langKey);
+        } catch (e) { /* no-op */ }
+        refreshExceptionsTracker();
+    }
+
+    function refreshExceptionsTracker() {
+        var tracker = document.getElementById('exceptionsTracker');
+        if (!tracker) return;
+        var langMenu = document.getElementById('globalCandidateLanguage');
+        var langKey = (langMenu && langMenu.value) ? langMenu.value : 'en-US';
+        var langLabel = (langMenu && langMenu.selectedIndex >= 0 && langMenu.value) ?
+            langMenu.options[langMenu.selectedIndex].text : 'no language selected yet';
+        var list = getExceptionsForLanguage(langKey);
+
+        if (list.length === 0) {
+            tracker.innerHTML = 'No exceptions saved yet for ' + escapeHtmlHtmlEntities(langLabel) + '.';
+        } else {
+            tracker.innerHTML = list.length + ' saved for ' + escapeHtmlHtmlEntities(langLabel) +
+                ' (' + escapeHtmlHtmlEntities(list.slice(0, 3).join(', ')) + (list.length > 3 ? '…' : '') + ')' +
+                '<button type="button" onclick="clearExceptionsForLanguage(\'' + langKey.replace(/'/g, "\\'") + '\')">Clear</button>';
+        }
+    }
+
+    // Click handler attached programmatically (not inline onclick) to every
+    // "Not an error" button so arbitrary flagged text — quotes, apostrophes,
+    // any script — can never break an HTML attribute.
+    function handleNotAnErrorClick(evt) {
+        var btn = evt.currentTarget;
+        var langKey = btn.getAttribute('data-lang');
+        var issueText = btn.getAttribute('data-text');
+        addExceptionForLanguage(langKey, issueText);
+        var row = btn.closest('.issue-row');
+        if (row) row.style.opacity = '0.4';
+        btn.textContent = 'Saved ✓';
+        btn.disabled = true;
+    }
+
     function clearDashboardFields() {
         if (confirm("Are you sure you want to clear all data text fields in this grading dashboard?")) {
             for (var i = 5; i <= 7; i++) {
@@ -397,8 +554,10 @@
             }
             for (var i = 8; i <= 10; i++) {
                 var cand = document.getElementById('cand_q' + i);
+                var notes = document.getElementById('notes_q' + i);
                 var rpt = document.getElementById('report_q' + i);
                 if (cand) cand.value = "";
+                if (notes) notes.value = "";
                 if (rpt) rpt.innerHTML = "[Automated AI grading report empty]";
             }
         }
@@ -415,6 +574,15 @@
         if (sortingMode === "cjk") {
             sourceTokensArray = Array.from(cleanSource);
             targetTokensArray = Array.from(cleanTarget);
+        } else if (sortingMode === "paragraph") {
+            // BUG RISK FIX (E): on very long texts, the full word/char LCS
+            // matrix below is O(n*m) in both time and memory and can freeze
+            // the tab. Falling back to paragraph-level tokens here keeps the
+            // matrix small (dozens of paragraphs instead of thousands of
+            // words/characters) while still showing which paragraphs changed.
+            var paraSplitterObj = new RegExp("(\\n+)", "");
+            sourceTokensArray = cleanSource.split(paraSplitterObj);
+            targetTokensArray = cleanTarget.split(paraSplitterObj);
         } else {
             var spaceRegPattern = "(\\s+)";
             var spaceSplitterObj = new RegExp(spaceRegPattern, "");
@@ -487,6 +655,13 @@
         return cleanString;
     }
 
+    // SAFETY NET (E): above this combined-length threshold, the word/char
+    // LCS matrix gets big enough to risk a noticeable freeze, especially in
+    // "cjk" character mode. Falling back to paragraph-level comparison keeps
+    // the tool responsive regardless of how long submissions get, while a
+    // proper Myers-algorithm rewrite is still on the TODO list for later.
+    var LONG_TEXT_DIFF_THRESHOLD = 8000;
+
     function executeLqaDiffAuditor(questionIndex) {
         var candidateValue = document.getElementById('cand_q' + questionIndex).value;
         var referenceValue = document.getElementById('ref_q' + questionIndex).value;
@@ -497,6 +672,13 @@
         var scriptMode = "spaced";
         if (selectedLangCode.indexOf("zh") === 0 || selectedLangCode.indexOf("ja") === 0) {
             scriptMode = "cjk";
+        }
+
+        var combinedLength = candidateValue.length + referenceValue.length;
+        var usedLongTextFallback = false;
+        if (combinedLength > LONG_TEXT_DIFF_THRESHOLD) {
+            scriptMode = "paragraph";
+            usedLongTextFallback = true;
         }
         
         var reportBox = document.getElementById('report_q' + questionIndex);
@@ -511,16 +693,272 @@
         }
 
         var compiledDiffOutputHtml = computeLqaTextDiffSegments(candidateValue, referenceValue, scriptMode);
+        if (usedLongTextFallback) {
+            compiledDiffOutputHtml = '<div class="report-meta-note">⚠️ Long text detected — showing a ' +
+                'paragraph-level comparison instead of word-by-word to keep the page responsive.</div>' +
+                compiledDiffOutputHtml;
+        }
         reportBox.innerHTML = compiledDiffOutputHtml;
     }
 
-    // Initialize the provider UI (key field visibility + language note) as
-    // soon as the page loads, so it's correct before the user touches anything.
+    // Initialize the provider UI (key field visibility + language note) and
+    // the language lock (B) as soon as the page loads, so both are correct
+    // before the user touches anything.
     updateProviderUI();
+    updateLanguageLockState();
 </script>
 <!-- END OF BLOCK 5 -->
 <!-- START OF BLOCK 6: HUGGING FACE REST CORE PIPELINE -->
 <script>
+    // FEATURE: curated, defensible examples of legitimate regional/register
+    // variation, injected into the prompt only for the language actually
+    // selected. This is a starting set, not exhaustive coverage of all 32
+    // languages — meant to grow over time (see TODO) as real cases come in.
+    var CULTURAL_NUANCE_EXAMPLES = {
+        "fr-FR": "Examples of acceptable variation: dropping \"ne\" in informal negation (\"je sais pas\") is standard informal register, not a grammar error.",
+        "de-DE": "Examples of acceptable variation: colloquial \"weil\" followed by main-clause word order (instead of the verb-final subordinate form) is extremely common in spoken-style informal writing and should not be auto-flagged as a hard grammar error in a casual register; Austrian or Swiss spelling/vocabulary differences are legitimate national variants, not mistakes.",
+        "ar-AA": "Arabic is diglossic: a casual-register text may legitimately mix Modern Standard Arabic with dialectal vocabulary or grammar (Egyptian, Levantine, Gulf, Maghrebi). Do not penalize dialectal forms as \"non-standard\" if the register is informal.",
+        "es-ES": "If the expected variant is Peninsular Spanish, voseo (\"vos ten\u00e9s\") or heavy Latin American vocabulary may indicate a regional mismatch rather than a grammar error \u2014 flag this under regionalConsistency instead.",
+        "es-419": "Voseo (\"vos ten\u00e9s\" instead of \"t\u00fa tienes\") is correct standard usage in Argentina, Uruguay, and parts of Central America \u2014 do not flag it as a grammar error.",
+        "pt-PT": "European Portuguese conventions (e.g. \"estou a fazer\", \"tu\") differ from Brazilian Portuguese (\"estou fazendo\", \"voc\u00ea\") \u2014 both are correct within their own variant.",
+        "pt-BR": "Brazilian Portuguese conventions (e.g. \"estou fazendo\", \"voc\u00ea\") differ from European Portuguese (\"estou a fazer\", \"tu\") \u2014 both are correct within their own variant.",
+        "zh-CN": "Casual, conversational Mandarin commonly omits subject pronouns and uses sentence-final particles (\u5427, \u5462, \u554a, \u5566) \u2014 these are natural and should not be treated as grammar errors.",
+        "zh-TW": "Casual, conversational Mandarin commonly omits subject pronouns and uses sentence-final particles (\u5427, \u5462, \u554a, \u5566) \u2014 these are natural and should not be treated as grammar errors. Traditional characters are expected here.",
+        "zh-HK": "Written Cantonese vernacular forms (e.g. \u5566, \u5631, \u55c4, \u559c) are legitimate in a Hong Kong / Cantonese context and should not be marked wrong against Mandarin standard grammar."
+    };
+
+    // FEATURE: which OTHER variant to actively watch for, per language, so
+    // the model can flag a clear regional mismatch (e.g. Brazilian forms in
+    // a Portugal-targeted test) as a factual observation rather than silence
+    // or a generic grammar complaint.
+    var REGIONAL_VARIANT_CONTRAST = {
+        "fr-FR": "Qu\u00e9b\u00e9cois French or other Francophone regional variants outside Metropolitan France",
+        "es-ES": "Latin American Spanish (e.g. voseo, regional vocabulary)",
+        "es-419": "Peninsular Spanish (Spain) vocabulary and grammar",
+        "pt-PT": "Brazilian Portuguese (e.g. gerund forms like \"estou fazendo\", \"voc\u00ea\" usage, Brazilian-specific vocabulary)",
+        "pt-BR": "European Portuguese (e.g. \"estou a fazer\", \"tu\" usage, Portugal-specific vocabulary)",
+        "zh-CN": "Traditional Chinese characters, or Hong Kong / Cantonese-specific vernacular forms",
+        "zh-TW": "Simplified Chinese characters, or Mainland Mandarin-specific phrasing",
+        "zh-HK": "Mandarin-only phrasing with no Cantonese-specific forms at all, or unexpected Simplified characters"
+    };
+
+    var SEVERITY_BADGE_CLASS = { "Critical": "badge-critical", "Major": "badge-major", "Minor": "badge-minor", "Neutral": "badge-neutral" };
+    var CONFIDENCE_BADGE_CLASS = { "High": "badge-conf-high", "Medium": "badge-conf-medium", "Low": "badge-conf-low" };
+
+    // Builds the full instruction prompt for a given question. Centralized
+    // here so both the normal pass and the optional self-review pass agree
+    // on the rules being applied.
+    function buildLqaSystemPrompt(questionIndex, candidateValue, selectedLangCode, selectedLangName) {
+        var promptContextInstruction = "";
+
+        if (questionIndex === 8 || questionIndex === 9) {
+            promptContextInstruction =
+                "The candidate is a non-native speaker writing a long-form essay directly in English. " +
+                "Evaluate their text carefully for spelling, vocabulary choices, sentence structure, clarity of expression, logical organization of ideas, and overall fluency. " +
+                "Assess whether the candidate can communicate both simple and complex thoughts clearly, accurately, and professionally.";
+        } else if (questionIndex === 10) {
+            promptContextInstruction =
+                "The candidate is writing their essay in " + selectedLangName + " (" + selectedLangCode + "). " +
+                "The candidate is expected to demonstrate native-level written proficiency in this language. " +
+                "Evaluate the text against the standards of an educated native speaker. " +
+                "Thoroughly audit their text for spelling mistakes, grammatical conformity, fluency, and regional style issues. " +
+                "Only report issues that are likely genuine language problems. " +
+                "Avoid speculative corrections and avoid treating acceptable language variations as errors.";
+        }
+
+        // FEATURE: register policy fixing the "academic bias" / "ignores
+        // domain jargon" / "misreads deliberate rhetorical devices" defects.
+        var registerPolicy =
+            "REGISTER POLICY: All registers of language are valid for this evaluation \u2014 formal, informal, " +
+            "colloquial, internet slang, and industry- or domain-specific jargon (for example gaming terms such " +
+            "as \"RPG\", \"quest\", \"loot\", or \"NPC\") must all be treated as legitimate language use, never as " +
+            "register or vocabulary errors. If a phrasing appears to be a deliberate rhetorical or stylistic choice " +
+            "(wordplay, a deliberately punchy conclusion, a thematic pun), judge it on its effectiveness, not on " +
+            "conformity to a formal or academic standard, and do not classify it as a style error. The ONLY case " +
+            "where register itself becomes a concern is excessive vulgarity or profanity \u2014 in that case, note it " +
+            "once under Style with Minor or Neutral severity as a style observation, never as a spelling or grammar fault.";
+
+        // FEATURE: cultural-nuance examples + regional-consistency check,
+        // both scoped to Q10 only (the only question where the candidate
+        // writes in a specific target language rather than fixed English).
+        var culturalNuanceClause = "";
+        var regionalConsistencyClause =
+            "Always include a \"regionalConsistency\" field in your JSON response. Set \"applicable\" to false " +
+            "and \"note\" to \"Not applicable for this language.\" unless told otherwise below.";
+
+        if (questionIndex === 10) {
+            if (CULTURAL_NUANCE_EXAMPLES[selectedLangCode]) {
+                culturalNuanceClause = "CULTURAL NUANCE GUIDANCE: " + CULTURAL_NUANCE_EXAMPLES[selectedLangCode] + 
+                    " Do not flag genuinely acceptable regional or register variation like this as an error.";
+            }
+            if (REGIONAL_VARIANT_CONTRAST[selectedLangCode]) {
+                regionalConsistencyClause =
+                    "REGIONAL CONSISTENCY CHECK: this question expects " + selectedLangName + ". Examine the text for " +
+                    "clear signs that it was actually written in " + REGIONAL_VARIANT_CONTRAST[selectedLangCode] +
+                    " instead. If you find such signs, set regionalConsistency.applicable to true and explain the " +
+                    "specific markers you noticed in regionalConsistency.note. This is a factual observation for the " +
+                    "recruiter, NOT a grammar or spelling error \u2014 never list it as an issue under any of the four pillars. " +
+                    "If you find no such signs, set applicable to false and note to \"No regional mismatch detected.\"";
+            }
+        }
+
+        // FEATURE: living exceptions dictionary \u2014 terms a human reviewer
+        // already accepted for this language are never flagged again.
+        var exceptionsClause = "";
+        var exceptionsLangKey = getExceptionsLangKey(questionIndex);
+        var savedExceptions = getExceptionsForLanguage(exceptionsLangKey);
+        if (savedExceptions.length > 0) {
+            exceptionsClause = "PREVIOUSLY ACCEPTED TERMS: a human reviewer already confirmed the following terms " +
+                "or expressions are correct for this language/context \u2014 do NOT flag them again under any pillar: " +
+                savedExceptions.join(", ") + ".";
+        }
+
+        var jsonSchemaInstruction =
+            "OUTPUT FORMAT: respond with ONLY a single valid JSON object, no markdown code fences, no commentary " +
+            "before or after it, exactly matching this shape: " +
+            '{"pillars": {"spelling": [{"issue": "...", "severity": "Critical|Major|Minor|Neutral", "confidence": "High|Medium|Low", "explanation": "..."}], ' +
+            '"grammar": [...], "fluency": [...], "style": [...]}, ' +
+            '"regionalConsistency": {"applicable": true|false, "note": "..."}, "summary": "..."} ' +
+            "Use an empty array for any pillar with no issues, but always include all four pillar keys. " +
+            "Severity meanings \u2014 Critical: blocks understanding or changes meaning; Major: a clear error a native " +
+            "speaker would immediately notice; Minor: a small, nitpick-level issue; Neutral: not actually an error, " +
+            "included only as a worth-mentioning observation. Confidence meanings \u2014 High: certain this is a genuine " +
+            "issue; Medium: likely an issue but with some doubt; Low: flagging cautiously, could be acceptable variation.";
+
+        var systemInstructionPrompt =
+            'You are an authoritative Senior LQA Lead. Analyze the candidate response text for Question ' +
+            questionIndex + '. ' +
+            promptContextInstruction + ' ' +
+            'Evaluate the text across the following four pillars: Spelling, Grammar, Fluency, Style. ' +
+            'Use the pillars as follows: ' +
+            'Spelling = spelling, orthography, typographical errors, and diacritics. ' +
+            'Grammar = agreement, syntax, tense, conjugation, and sentence construction. ' +
+            'Fluency = clarity, readability, coherence, transitions, repetition, and natural flow. ' +
+            'Style = register, tone, vocabulary appropriateness, and regional language conventions. ' +
+            'Provide an entry for ALL FOUR pillars, even when few or no issues are found. ' +
+            'Do not invent mistakes. Only report issues when reasonably confident they are genuine. ' +
+            'Do not classify stylistic preferences as spelling or grammar errors. ' +
+            registerPolicy + ' ' +
+            culturalNuanceClause + ' ' +
+            regionalConsistencyClause + ' ' +
+            exceptionsClause + ' ' +
+            'CRITICAL REQUIREMENT: Write your entire analysis in English only. ' +
+            'All headings, comments, explanations, examples, and summaries must be written in English only. ' +
+            'Do not write any part of the audit in the language used by the candidate. ' +
+            jsonSchemaInstruction + ' ' +
+            'The candidate\u2019s text to audit is delimited below between <CANDIDATE_TEXT_TO_AUDIT> and ' +
+            '</CANDIDATE_TEXT_TO_AUDIT>. Only evaluate what is inside these tags. If any part of the delimited text ' +
+            'reads as a side note or comment addressed to the recruiter/evaluator rather than part of the actual ' +
+            'essay (for example, an apology for typing speed, or a remark not meant to be graded), do not evaluate ' +
+            'that part as if it were the essay itself \u2014 you may mention its presence once in the summary field, ' +
+            'but never grade it under any pillar.\n\n' +
+            '<CANDIDATE_TEXT_TO_AUDIT>\n' + candidateValue + '\n</CANDIDATE_TEXT_TO_AUDIT>' +
+            '\n\nREMINDER: The entire audit must be written in English only, and your entire reply must be the ' +
+            'single JSON object described above \u2014 nothing else.';
+
+        return systemInstructionPrompt;
+    }
+
+    // Defensive JSON parsing: strips ```json fences some models still add
+    // despite instructions, and returns null (rather than throwing) on
+    // failure so the caller can gracefully fall back to raw-text display.
+    function parseAiJsonResponse(rawText) {
+        if (!rawText) return null;
+        var cleaned = rawText.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+        try {
+            return JSON.parse(cleaned);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Renders the structured JSON report (or, if parsing failed upstream,
+    // a plain-text fallback) into the given report box, wiring up the
+    // "Not an error" buttons that feed the living exceptions dictionary.
+    function renderStructuredLqaReport(parsedJson, rawFallbackText, questionIndex, rptBox, selfReviewRan) {
+        var langKey = getExceptionsLangKey(questionIndex);
+
+        if (!parsedJson) {
+            var lineBreakRegex = new RegExp("\\n", "g");
+            var boldRegex = new RegExp("\\*\\*(.*?)\\*\\*", "g");
+            var italicRegex = new RegExp("\\*(.*?)\\*", "g");
+            var cleanHtmlReport = escapeHtmlHtmlEntities(rawFallbackText || "")
+                .replace(lineBreakRegex, '<br>')
+                .replace(boldRegex, '<strong>$1</strong>')
+                .replace(italicRegex, '<em>$1</em>');
+            rptBox.innerHTML = '<div class="report-meta-note">\u26a0\ufe0f The AI response was not valid structured ' +
+                'JSON \u2014 showing the raw reply below.</div>' + cleanHtmlReport;
+            return;
+        }
+
+        var pillarTitles = { spelling: "Spelling", grammar: "Grammar", fluency: "Fluency", style: "Style" };
+        var html = "";
+
+        Object.keys(pillarTitles).forEach(function(pillarKey) {
+            var issues = (parsedJson.pillars && parsedJson.pillars[pillarKey]) || [];
+            html += '<div class="pillar-block"><h4>' + pillarTitles[pillarKey] + '</h4>';
+            if (!issues.length) {
+                html += '<div style="color:#16a34a; font-size:13.5px;">\u2705 No issues found.</div>';
+            } else {
+                issues.forEach(function(issue) {
+                    var sevClass = SEVERITY_BADGE_CLASS[issue.severity] || "badge-neutral";
+                    var confClass = CONFIDENCE_BADGE_CLASS[issue.confidence] || "badge-conf-medium";
+                    var issueTextRaw = issue.issue || "";
+                    var explanationRaw = issue.explanation || "";
+                    html += '<div class="issue-row">' +
+                        '<div class="issue-text">' +
+                        '<span class="badge ' + sevClass + '">' + escapeHtmlHtmlEntities(issue.severity || "Minor") + '</span>' +
+                        '<span class="badge ' + confClass + '">' + escapeHtmlHtmlEntities(issue.confidence || "Medium") + ' confidence</span><br>' +
+                        '<strong>' + escapeHtmlHtmlEntities(issueTextRaw) + '</strong>' +
+                        (explanationRaw ? ' \u2014 ' + escapeHtmlHtmlEntities(explanationRaw) : '') +
+                        '</div>' +
+                        '<button type="button" class="not-an-error-btn" data-lang="' + escapeHtmlHtmlEntities(langKey) +
+                        '" data-text="' + escapeHtmlHtmlEntities(issueTextRaw) + '">Not an error</button>' +
+                        '</div>';
+                });
+            }
+            html += '</div>';
+        });
+
+        if (parsedJson.regionalConsistency) {
+            var rc = parsedJson.regionalConsistency;
+            if (rc.applicable) {
+                html += '<div class="regional-consistency-box">\ud83c\udf0d <strong>Regional Consistency:</strong> ' +
+                    escapeHtmlHtmlEntities(rc.note || "") + '</div>';
+            } else {
+                html += '<div class="report-meta-note">Regional consistency: ' +
+                    escapeHtmlHtmlEntities(rc.note || "Not applicable for this language.") + '</div>';
+            }
+        }
+
+        if (parsedJson.summary) {
+            html += '<div class="report-meta-note">' + escapeHtmlHtmlEntities(parsedJson.summary) + '</div>';
+        }
+        if (selfReviewRan) {
+            html = '<div class="report-meta-note">\ud83d\udd01 Self-review pass applied: low-confidence findings were re-checked and pruned.</div>' + html;
+        }
+
+        rptBox.innerHTML = html;
+
+        rptBox.querySelectorAll('.not-an-error-btn').forEach(function(btn) {
+            btn.addEventListener('click', handleNotAnErrorClick);
+        });
+    }
+
+    // FEATURE: runs Q8, Q9 and Q10 in sequence with a short stagger between
+    // each call (politeness toward per-minute rate limits, and to avoid
+    // bursting simultaneous requests at any provider).
+    function executeLqaAnalyzeAll() {
+        var langMenu = document.getElementById('globalCandidateLanguage');
+        if (!langMenu || !langMenu.value) {
+            alert("Please select the candidate's language first.");
+            return;
+        }
+        executeLqaAIEvaluator(8);
+        setTimeout(function() { executeLqaAIEvaluator(9); }, 1500);
+        setTimeout(function() { executeLqaAIEvaluator(10); }, 3000);
+    }
+
     async function executeLqaAIEvaluator(questionIndex) {
         // FEATURE: provider is now selectable (Hugging Face or Cohere) via
         // the dropdown added to the admin panel. Each provider has its own
@@ -579,121 +1017,111 @@
         rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
             '🔄 Contacting ' + providerDisplayName + '... Analyzing metrics...\u003C/span\u003E';
 
-        var promptContextInstruction = "";
+        var systemInstructionPrompt = buildLqaSystemPrompt(questionIndex, candidateValue, selectedLangCode, selectedLangName);
+        var firstMessages = [{ role: "user", content: systemInstructionPrompt }];
 
-        if (questionIndex === 8 || questionIndex === 9) {
-    promptContextInstruction =
-        "The candidate is a non-native speaker writing a long-form essay directly in English. " +
-        "Evaluate their text carefully for spelling, vocabulary choices, sentence structure, clarity of expression, logical organization of ideas, and overall fluency. " +
-        "Assess whether the candidate can communicate both simple and complex thoughts clearly, accurately, and professionally.";
-}        else if (questionIndex === 10) {
-    promptContextInstruction =
-    "The candidate is writing their essay in " + selectedLangName +
-    " (" + selectedLangCode + "). " +
-    "The candidate is expected to demonstrate native-level written proficiency in this language. " +
-    "Evaluate the text against the standards of an educated native speaker. " +
-    "Thoroughly audit their text for spelling mistakes, grammatical conformity, fluency, and regional style issues. " +
-    "Only report issues that are likely genuine language problems. " +
-    "Avoid speculative corrections and avoid treating acceptable language variations as errors.";
-}
+        // Generic retrying chat-completion caller, reused for both the
+        // initial pass and the optional self-review pass below. Returns a
+        // Promise resolving to the raw text content of the model's reply.
+        function callAiChatCompletion(messages) {
+            return new Promise(function(resolve, reject) {
+                var retryCount = 0;
+                var maxRetries = 4; // BUG FIX: the old retry loop on HTTP 503 had no
+                                     // limit and could poll forever if the model never
+                                     // finished loading. Capped it so the UI always
+                                     // settles into a final success or error state.
+                var requestBody = JSON.stringify({ model: targetModelId, messages: messages });
 
-        var systemInstructionPrompt =
-    'You are an authoritative Senior LQA Lead. Analyze the candidate response text for Question ' +
-    questionIndex + '. ' +
-
-    promptContextInstruction + ' ' +
-
-    'Evaluate the text across the following four pillars: Spelling, Grammar, Fluency, Style. ' +
-
-    'Use the pillars as follows: ' +
-    'Spelling = spelling, orthography, typographical errors, and diacritics. ' +
-    'Grammar = agreement, syntax, tense, conjugation, and sentence construction. ' +
-    'Fluency = clarity, readability, coherence, transitions, repetition, and natural flow. ' +
-    'Style = register, tone, vocabulary appropriateness, and regional language conventions. ' +
-
-    'Provide feedback for ALL FOUR pillars, even when few or no issues are found. ' +
-    'Do not invent mistakes. Only report issues when reasonably confident they are genuine. ' +
-    'Do not classify stylistic preferences as spelling or grammar errors. ' +
-
-    'CRITICAL REQUIREMENT: Write your entire analysis in English only. ' +
-    'All headings, comments, explanations, examples, corrections, and summaries must be written in English only. ' +
-    'Do not write any part of the audit in the language used by the candidate. ' +
-
-    'Structure the analysis with bullet points under each pillar. ' +
-
-    'Here is the candidate text to audit:\n\n' +
-    candidateValue +
-
-    '\n\nREMINDER: The entire audit must be written in English only.';
-
-        var requestBody = JSON.stringify({
-            model: targetModelId,
-            messages: [
-                { role: "user", content: systemInstructionPrompt }
-            ]
-        });
-
-        var retryCount = 0;
-        var maxRetries = 4; // BUG FIX: the old retry loop on HTTP 503 had no
-                             // limit and could poll forever if the model never
-                             // finished loading. Capped it so the UI always
-                             // settles into a final success or error state.
-
-        function sendQueryToAiProvider() {
-            fetch(restEndpointUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + secretApiKey,
-                    'Content-Type': 'application/json'
-                },
-                body: requestBody
-            })
-            .then(function(networkResponse) {
-                if (networkResponse.status === 503 && retryCount < maxRetries) {
-                    retryCount++;
-                    rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
-                        '⏳ Model is warming up... Retrying automatically (' +
-                        retryCount + '/' + maxRetries + ')...\u003C/span\u003E';
-                    setTimeout(sendQueryToAiProvider, 5000);
-                    return null;
+                function attempt() {
+                    fetch(restEndpointUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + secretApiKey,
+                            'Content-Type': 'application/json'
+                        },
+                        body: requestBody
+                    })
+                    .then(function(networkResponse) {
+                        if (networkResponse.status === 503 && retryCount < maxRetries) {
+                            retryCount++;
+                            rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
+                                '⏳ Model is warming up... Retrying automatically (' +
+                                retryCount + '/' + maxRetries + ')...\u003C/span\u003E';
+                            setTimeout(attempt, 5000);
+                            return;
+                        }
+                        if (!networkResponse.ok) {
+                            reject(new Error('Network error. Status code: ' + networkResponse.status));
+                            return;
+                        }
+                        networkResponse.json().then(function(parsedJsonData) {
+                            // BUG FIX: the old code read parsedJsonData[0].generated_text,
+                            // which matched the legacy text-generation pipeline response
+                            // shape. The chat-completions endpoint returns an OpenAI-style
+                            // payload, so the message text lives at
+                            // choices[0].message.content instead.
+                            var generatedText = "";
+                            if (parsedJsonData && parsedJsonData.choices && parsedJsonData.choices.length > 0 &&
+                                parsedJsonData.choices[0].message) {
+                                generatedText = parsedJsonData.choices[0].message.content || "";
+                            }
+                            if (generatedText) {
+                                resolve(generatedText);
+                            } else {
+                                reject(new Error('Received an empty response from the AI model.'));
+                            }
+                        }).catch(reject);
+                    })
+                    .catch(reject);
                 }
-                if (!networkResponse.ok) {
-                    throw new Error('Network error. Status code: ' + 
-                        networkResponse.status
-                    );
-                }
-                return networkResponse.json();
-            })
-            .then(function(parsedJsonData) {
-                if (!parsedJsonData) return;
+                attempt();
+            });
+        }
 
-                // BUG FIX: the old code read parsedJsonData[0].generated_text,
-                // which matched the legacy text-generation pipeline response
-                // shape. The chat-completions endpoint returns an OpenAI-style
-                // payload, so the message text lives at
-                // choices[0].message.content instead.
-                var generatedReportText = "";
-                if (parsedJsonData.choices && parsedJsonData.choices.length > 0 &&
-                    parsedJsonData.choices[0].message) {
-                    generatedReportText = parsedJsonData.choices[0].message.content || "";
+        var selfReviewToggle = document.getElementById('selfReviewToggle');
+        var wantsSelfReview = !!(selfReviewToggle && selfReviewToggle.checked);
+
+        callAiChatCompletion(firstMessages)
+            .then(function(firstRawText) {
+                if (!wantsSelfReview) {
+                    renderStructuredLqaReport(parseAiJsonResponse(firstRawText), firstRawText, questionIndex, rptBox, false);
+                    return;
                 }
 
-                if (generatedReportText) {
-                    var lineBreakRegex = new RegExp("\\n", "g");
-                    var boldRegex = new RegExp("\\*\\*(.*?)\\*\\*", "g");
-                    var italicRegex = new RegExp("\\*(.*?)\\*", "g");
+                // FEATURE (4): optional self-review pass. Costs a second API
+                // call (2x quota for this analysis), which is why it stays
+                // an opt-in checkbox rather than always-on behavior.
+                rptBox.innerHTML = '\u003Cspan class="ai-status-loader"\u003E' +
+                    '🔎 Running self-review pass on ' + providerDisplayName + '...\u003C/span\u003E';
 
-                    var cleanHtmlReport = escapeHtmlHtmlEntities(generatedReportText)
-                        .replace(lineBreakRegex, '\u003Cbr\u003E')
-                        .replace(boldRegex, '\u003Cstrong\u003E$1\u003C/strong\u003E')
-                        .replace(italicRegex, '\u003Cem\u003E$1\u003C/em\u003E');
-                    
-                    rptBox.innerHTML = cleanHtmlReport;
-                } else {
-                    rptBox.innerHTML = '\u003Cspan style="color:#dc2626;' +
-                        ' font-weight:600;"\u003EError: Received empty response' +
-                        ' object from the AI model.\u003C/span\u003E';
-                }
+                var reviewInstruction =
+                    "Re-examine your own analysis above. For each flagged issue, reconsider whether you are " +
+                    "genuinely confident it represents a real language problem under the rules you were given " +
+                    "(including the register policy and the previously accepted terms list). Remove any issue " +
+                    "you are not reasonably confident about, and adjust confidence or severity levels if you " +
+                    "were too harsh or too lenient. Return the corrected analysis as a single JSON object in " +
+                    "exactly the same schema as before \u2014 no markdown fences, no extra commentary.";
+                var reviewMessages = firstMessages.concat([
+                    { role: "assistant", content: firstRawText },
+                    { role: "user", content: reviewInstruction }
+                ]);
+
+                callAiChatCompletion(reviewMessages)
+                    .then(function(reviewRawText) {
+                        var parsedReview = parseAiJsonResponse(reviewRawText);
+                        if (parsedReview) {
+                            renderStructuredLqaReport(parsedReview, reviewRawText, questionIndex, rptBox, true);
+                        } else {
+                            renderStructuredLqaReport(parseAiJsonResponse(firstRawText), firstRawText, questionIndex, rptBox, false);
+                            rptBox.innerHTML = '\u003Cdiv class="report-meta-note"\u003E\u26a0\ufe0f Self-review pass ' +
+                                'did not return valid JSON \u2014 showing the first-pass result instead.\u003C/div\u003E' + rptBox.innerHTML;
+                        }
+                    })
+                    .catch(function() {
+                        renderStructuredLqaReport(parseAiJsonResponse(firstRawText), firstRawText, questionIndex, rptBox, false);
+                        rptBox.innerHTML = '\u003Cdiv class="report-meta-note"\u003E\u26a0\ufe0f Self-review pass failed ' +
+                            '\u2014 showing the first-pass result instead.\u003C/div\u003E' + rptBox.innerHTML;
+                    });
             })
             .catch(function(networkException) {
                 console.error('LQA engine routing failure handled:', 
@@ -709,9 +1137,6 @@
                     ' font-weight:600;"\u003EAPI Connection Failed: ' + 
                     errCleanMessage + '. ' + keyHintMessage + '\u003C/span\u003E';
             });
-        }
-
-        sendQueryToAiProvider();
     }
 
     // BUG FIX: escapeHtmlHtmlEntities was previously defined a second time
